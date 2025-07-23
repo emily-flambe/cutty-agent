@@ -13,6 +13,7 @@ import {
 import { openai } from "@ai-sdk/openai";
 import { processToolCalls } from "./utils";
 import { tools, executions } from "./tools";
+import { corsHeaders, handleOptions } from "./middleware";
 // import { env } from "cloudflare:workers";
 
 const model = openai("gpt-4o-2024-11-20");
@@ -25,7 +26,7 @@ const model = openai("gpt-4o-2024-11-20");
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
  */
-export class Chat extends AIChatAgent<Env> {
+export class ChatAgent extends AIChatAgent<Env> {
   /**
    * Handles incoming chat messages and manages the response stream
    * @param onFinish - Callback function executed when streaming completes
@@ -60,7 +61,20 @@ export class Chat extends AIChatAgent<Env> {
         // Stream the AI response using GPT-4
         const result = streamText({
           model,
-          system: `You are a helpful assistant that can do various tasks... 
+          system: `You are Cutty the Cuttlefish, a friendly AI assistant for the Cutty app.
+You help users understand the app and can execute certain actions on their behalf.
+
+Your personality:
+- You're a cheerful cuttlefish who loves organizing data
+- You use ocean-related metaphors occasionally (but don't overdo it)
+- You're professional but friendly
+
+Currently, you can:
+- Answer questions about the Cutty app
+- List the states supported for synthetic data generation (via tool)
+- Help users understand app features
+
+Always be helpful and clear in your responses.
 
 ${unstable_getSchedulePrompt({ date: new Date() })}
 
@@ -106,22 +120,66 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
     const url = new URL(request.url);
+    const origin = request.headers.get("Origin") || "*";
+
+    // Handle OPTIONS for CORS
+    if (request.method === "OPTIONS") {
+      return handleOptions(request);
+    }
+
+    // Health check endpoint
+    if (url.pathname === "/health") {
+      return new Response(
+        JSON.stringify({
+          status: "healthy",
+          agent: "CuttyAgent",
+          version: "0.1.0",
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders(origin),
+          },
+        }
+      );
+    }
 
     if (url.pathname === "/check-open-ai-key") {
       const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
-      return Response.json({
-        success: hasOpenAIKey,
-      });
+      return Response.json(
+        {
+          success: hasOpenAIKey,
+        },
+        {
+          headers: corsHeaders(origin),
+        }
+      );
     }
     if (!process.env.OPENAI_API_KEY) {
       console.error(
         "OPENAI_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
       );
     }
-    return (
-      // Route the request to our agent or return 404 if not found
-      (await routeAgentRequest(request, env)) ||
-      new Response("Not found", { status: 404 })
-    );
+
+    // Route the request to our agent or return 404 if not found
+    const agentResponse = await routeAgentRequest(request, env);
+    if (agentResponse) {
+      // Add CORS headers to agent response
+      const newHeaders = new Headers(agentResponse.headers);
+      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
+        newHeaders.set(key, value);
+      });
+      return new Response(agentResponse.body, {
+        status: agentResponse.status,
+        statusText: agentResponse.statusText,
+        headers: newHeaders,
+      });
+    }
+
+    return new Response("Not found", {
+      status: 404,
+      headers: corsHeaders(origin),
+    });
   },
 } satisfies ExportedHandler<Env>;

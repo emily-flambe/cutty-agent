@@ -1,23 +1,29 @@
 {
-  "name": "cloudflare-agent-starter",
-  "version": "1.0.0",
-  "description": "",
+  "name": "cutty-agent",
+  "version": "0.1.0",
+  "description": "AI Agent for Cutty - Proof of Concept",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "vite dev",
+    "dev": "wrangler dev --env dev --local --port 8789",
     "deploy": "vite build && wrangler deploy",
+    "deploy:dev": "wrangler deploy --env dev",
+    "logs:dev": "wrangler tail --env dev",
     "test": "vitest",
+    "test:ci": "vitest run",
     "types": "wrangler types",
     "format": "prettier --write .",
-    "check": "prettier . --check && biome lint && tsc"
+    "check": "prettier . --check && biome lint && tsc",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write"
   },
   "keywords": [
     "cloudflare",
     "ai",
     "agents"
   ],
-  "author": "",
+  "author": "Emily Cogsdill",
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.1.1",

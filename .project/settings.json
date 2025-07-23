@@ -1,0 +1,29 @@
+{
+  "projectName": "cutty-agent",
+  "version": "0.1.0",
+  "type": "proof-of-concept",
+  "settings": {
+    "development": {
+      "port": 8789,
+      "debug": true,
+      "enableTools": true
+    },
+    "production": {
+      "port": 8787,
+      "debug": false,
+      "enableTools": true
+    }
+  },
+  "features": {
+    "streaming": true,
+    "tools": ["getSupportedStates", "explainFeature"],
+    "confirmationRequired": ["explainFeature"]
+  },
+  "integration": {
+    "allowedOrigins": [
+      "http://localhost:5173",
+      "https://cutty-dev.emilycogsdill.com",
+      "https://cutty.emilycogsdill.com"
+    ]
+  }
+}
