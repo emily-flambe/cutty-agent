@@ -13,20 +13,14 @@ import {
 import { anthropic } from "@ai-sdk/anthropic";
 import { processToolCalls } from "./utils";
 import { tools, executions } from "./tools";
-import { corsHeaders, handleOptions } from "./middleware";
 // import { env } from "cloudflare:workers";
 
 const model = anthropic("claude-3-5-sonnet-20241022");
-// Cloudflare AI Gateway
-// const anthropic = createAnthropic({
-//   apiKey: env.ANTHROPIC_API_KEY,
-//   baseURL: env.GATEWAY_BASE_URL,
-// });
 
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
  */
-export class ChatAgent extends AIChatAgent<Env> {
+export class Chat extends AIChatAgent<Env> {
   /**
    * Handles incoming chat messages and manages the response stream
    * @param onFinish - Callback function executed when streaming completes
@@ -120,66 +114,22 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
     const url = new URL(request.url);
-    const origin = request.headers.get("Origin") || "*";
-
-    // Handle OPTIONS for CORS
-    if (request.method === "OPTIONS") {
-      return handleOptions(request);
-    }
-
-    // Health check endpoint
-    if (url.pathname === "/health") {
-      return new Response(
-        JSON.stringify({
-          status: "healthy",
-          agent: "CuttyAgent",
-          version: "0.1.0",
-          timestamp: new Date().toISOString(),
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders(origin),
-          },
-        }
-      );
-    }
 
     if (url.pathname === "/check-api-key") {
       const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;
-      return Response.json(
-        {
-          success: hasAnthropicKey,
-        },
-        {
-          headers: corsHeaders(origin),
-        }
-      );
+      return Response.json({
+        success: hasAnthropicKey,
+      });
     }
     if (!process.env.ANTHROPIC_API_KEY) {
       console.error(
         "ANTHROPIC_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
       );
     }
-
-    // Route the request to our agent or return 404 if not found
-    const agentResponse = await routeAgentRequest(request, env);
-    if (agentResponse) {
-      // Add CORS headers to agent response
-      const newHeaders = new Headers(agentResponse.headers);
-      Object.entries(corsHeaders(origin)).forEach(([key, value]) => {
-        newHeaders.set(key, value);
-      });
-      return new Response(agentResponse.body, {
-        status: agentResponse.status,
-        statusText: agentResponse.statusText,
-        headers: newHeaders,
-      });
-    }
-
-    return new Response("Not found", {
-      status: 404,
-      headers: corsHeaders(origin),
-    });
+    return (
+      // Route the request to our agent or return 404 if not found
+      (await routeAgentRequest(request, env)) ||
+      new Response("Not found", { status: 404 })
+    );
   },
 } satisfies ExportedHandler<Env>;

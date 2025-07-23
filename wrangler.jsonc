@@ -4,52 +4,23 @@
   "compatibility_date": "2025-01-07",
   "compatibility_flags": [
     "nodejs_compat",
-    "nodejs_compat_populate_process_env",
+    "nodejs_compat_populate_process_env"
   ],
   "assets": {
-    "directory": "public",
+    "directory": "public"
   },
-
-  // Durable Objects binding - required for Agents
   "durable_objects": {
     "bindings": [
       {
-        "name": "AGENT",
-        "class_name": "ChatAgent",
-        "script_name": "cutty-agent",
-      },
-    ],
+        "name": "Chat",
+        "class_name": "Chat"
+      }
+    ]
   },
-
-  // Development environment
-  "env": {
-    "dev": {
-      "name": "cutty-agent-dev",
-      "durable_objects": {
-        "bindings": [
-          {
-            "name": "AGENT",
-            "class_name": "ChatAgent",
-            "script_name": "cutty-agent-dev",
-          },
-        ],
-      },
-    },
-  },
-
-  // CORS headers for Cutty frontend
-  "cors": {
-    "allowed_origins": [
-      "http://localhost:5173",
-      "https://cutty-dev.emilycogsdill.com",
-      "https://cutty.emilycogsdill.com",
-    ],
-  },
-
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["ChatAgent"],
-    },
-  ],
+      "new_sqlite_classes": ["Chat"]
+    }
+  ]
 }
