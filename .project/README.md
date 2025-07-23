@@ -10,13 +10,14 @@ This directory contains project-specific configuration and documentation for the
 - `contexts/` - Architecture and standards documentation
   - `architecture.md` - System design and components
   - `coding-standards.md` - Development standards
+  - `rules.md` - Project rules and conventions
 - `api-docs/` - API documentation
   - `api-agreements.md` - API contracts and endpoints
 
 ## Quick Reference
 
 - **Purpose**: Evaluate Cloudflare Agents for Cutty AI assistant
-- **Stack**: Cloudflare Workers + Agents SDK + OpenAI GPT-4
+- **Stack**: Cloudflare Workers + Agents SDK + Anthropic Claude
 - **Status**: Proof of Concept
 
 For detailed setup instructions, see the setup prompt in the main Cutty repository.

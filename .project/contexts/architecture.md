@@ -6,8 +6,8 @@ Cutty Agent is built on Cloudflare's edge computing platform using the Agents SD
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌────────────────┐
-│  Cutty Frontend │────▶│  Cloudflare Edge │────▶│   OpenAI API   │
-│   (React App)   │◀────│  (Agent Worker)  │◀────│    (GPT-4)     │
+│  Cutty Frontend │────▶│  Cloudflare Edge │────▶│ Anthropic API  │
+│   (React App)   │◀────│  (Agent Worker)  │◀────│   (Claude)     │
 └─────────────────┘     └──────────────────┘     └────────────────┘
                                │
                                ▼

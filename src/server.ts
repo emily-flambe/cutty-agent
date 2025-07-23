@@ -10,16 +10,16 @@ import {
   type StreamTextOnFinishCallback,
   type ToolSet,
 } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { processToolCalls } from "./utils";
 import { tools, executions } from "./tools";
 import { corsHeaders, handleOptions } from "./middleware";
 // import { env } from "cloudflare:workers";
 
-const model = openai("gpt-4o-2024-11-20");
+const model = anthropic("claude-3-5-sonnet-20241022");
 // Cloudflare AI Gateway
-// const openai = createOpenAI({
-//   apiKey: env.OPENAI_API_KEY,
+// const anthropic = createAnthropic({
+//   apiKey: env.ANTHROPIC_API_KEY,
 //   baseURL: env.GATEWAY_BASE_URL,
 // });
 
@@ -58,7 +58,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           executions,
         });
 
-        // Stream the AI response using GPT-4
+        // Stream the AI response using Claude
         const result = streamText({
           model,
           system: `You are Cutty the Cuttlefish, a friendly AI assistant for the Cutty app.
@@ -145,20 +145,20 @@ export default {
       );
     }
 
-    if (url.pathname === "/check-open-ai-key") {
-      const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+    if (url.pathname === "/check-api-key") {
+      const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;
       return Response.json(
         {
-          success: hasOpenAIKey,
+          success: hasAnthropicKey,
         },
         {
           headers: corsHeaders(origin),
         }
       );
     }
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.ANTHROPIC_API_KEY) {
       console.error(
-        "OPENAI_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
+        "ANTHROPIC_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
       );
     }
 

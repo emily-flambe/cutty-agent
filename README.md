@@ -9,7 +9,7 @@ This is an experimental implementation to validate the feasibility of migrating 
 ## Development
 
 1. Install dependencies: `npm install`
-2. Copy `.dev.vars.example` to `.dev.vars` and add your OpenAI API key
+2. Copy `.dev.vars.example` to `.dev.vars` and add your Anthropic API key
 3. Run locally: `npm run dev`
 4. Deploy to dev: `npm run deploy:dev`
 
@@ -22,7 +22,7 @@ This is an experimental implementation to validate the feasibility of migrating 
 ## Architecture
 
 - Uses Cloudflare Durable Objects for state management
-- OpenAI GPT-4 for language processing
+- Anthropic Claude 3.5 Sonnet for language processing
 - Streaming responses for real-time interaction
 - Tool system for executing actions
 
