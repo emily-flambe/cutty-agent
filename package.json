@@ -6,10 +6,9 @@
   "private": true,
   "scripts": {
     "start": "vite dev",
-    "dev": "wrangler dev --env dev --local --port 8789",
+    "dev": "wrangler dev --local --port 8789",
     "deploy": "vite build && wrangler deploy",
-    "deploy:dev": "wrangler deploy --env dev",
-    "logs:dev": "wrangler tail --env dev",
+    "logs": "wrangler tail",
     "test": "vitest",
     "test:ci": "vitest run",
     "types": "wrangler types",

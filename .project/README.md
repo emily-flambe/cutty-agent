@@ -19,5 +19,7 @@ This directory contains project-specific configuration and documentation for the
 - **Purpose**: Evaluate Cloudflare Agents for Cutty AI assistant
 - **Stack**: Cloudflare Workers + Agents SDK + Anthropic Claude
 - **Status**: Proof of Concept
+- **GitHub Repository**: github.com/emily-flambe/cutty-agent
+- **GitHub Username**: emily-flambe (Note: Local development path shows emilycogsdill due to machine username)
 
 For detailed setup instructions, see the setup prompt in the main Cutty repository.

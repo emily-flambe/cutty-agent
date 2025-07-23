@@ -15,7 +15,7 @@ Cutty Agent is a proof-of-concept AI assistant for the Cutty application, built 
 
 ## Core Features
 
-- **Conversational AI**: Powered by OpenAI GPT-4 via Cloudflare Agents
+- **Conversational AI**: Powered by Anthropic Claude 3.5 Sonnet via Cloudflare Agents
 - **Tool System**: Execute actions on behalf of users (starting with read-only operations)
 - **Streaming Responses**: Real-time interaction with users
 - **CORS Support**: Designed to integrate with Cutty frontend
@@ -25,7 +25,7 @@ Cutty Agent is a proof-of-concept AI assistant for the Cutty application, built 
 
 - **Runtime**: Cloudflare Workers with Durable Objects
 - **Framework**: Cloudflare Agents SDK
-- **Language Model**: OpenAI GPT-4
+- **Language Model**: Anthropic Claude 3.5 Sonnet
 - **Language**: TypeScript
 - **State Management**: Durable Objects for conversation persistence
 

@@ -40,7 +40,7 @@ data: {"type":"done"}
   "status": "healthy",
   "agent": "CuttyAgent",
   "version": "0.1.0",
-  "timestamp": "2024-01-15T10:30:00Z"
+  "timestamp": "2025-01-23T10:30:00Z"
 }
 ```
 
@@ -81,7 +81,8 @@ data: {"type":"done"}
 
 **Allowed Origins**:
 
-- `http://localhost:5173` (local development)
+- `http://localhost:8789` (agent local development)
+- `http://localhost:5173` (frontend local development)
 - `https://cutty-dev.emilycogsdill.com` (staging)
 - `https://cutty.emilycogsdill.com` (production)
 

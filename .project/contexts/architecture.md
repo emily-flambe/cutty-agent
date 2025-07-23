@@ -6,8 +6,8 @@ Cutty Agent is built on Cloudflare's edge computing platform using the Agents SD
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌────────────────┐
-│  Cutty Frontend │────▶│  Cloudflare Edge │────▶│ Anthropic API  │
-│   (React App)   │◀────│  (Agent Worker)  │◀────│   (Claude)     │
+│  Cutty Frontend │────▶│  Cloudflare Edge │────▶│   OpenAI API   │
+│   (React App)   │◀────│  (Agent Worker)  │◀────│    (GPT-4o)    │
 └─────────────────┘     └──────────────────┘     └────────────────┘
                                │
                                ▼
@@ -50,7 +50,7 @@ Cutty Agent is built on Cloudflare's edge computing platform using the Agents SD
 1. **Client Request**: Frontend sends POST to `/api/chat`
 2. **CORS Validation**: Middleware checks origin
 3. **DO Routing**: Worker routes to appropriate Durable Object
-4. **Message Processing**: Agent SDK processes with GPT-4
+4. **Message Processing**: Agent SDK processes with Claude 3.5 Sonnet
 5. **Tool Execution**: If needed, executes defined tools
 6. **Stream Response**: Sends back streaming SSE response
 
@@ -76,9 +76,9 @@ Cutty Agent is built on Cloudflare's edge computing platform using the Agents SD
 
 ## Deployment Architecture
 
-- **Development**: Local Wrangler dev server
-- **Staging**: cutty-agent-dev.workers.dev
-- **Production**: (Future) cutty-agent.workers.dev
+- **Single Environment**: This PoC uses one deployment environment
+- **Local Development**: Wrangler dev server on port 8789
+- **Deployed URL**: cutty-agent.emily-cogsdill.workers.dev
 
 ## Security Considerations
 
