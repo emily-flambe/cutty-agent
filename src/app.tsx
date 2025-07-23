@@ -38,6 +38,17 @@ export default function Chat() {
   const [textareaHeight, setTextareaHeight] = useState("auto");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Generate or retrieve a unique session ID for this user
+  const [sessionId] = useState(() => {
+    let id = localStorage.getItem("cutty-session-id");
+    if (!id) {
+      // Generate a unique ID for this session
+      id = `session-${crypto.randomUUID()}`;
+      localStorage.setItem("cutty-session-id", id);
+    }
+    return id;
+  });
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -67,7 +78,7 @@ export default function Chat() {
   };
 
   const agent = useAgent({
-    agent: "chat",
+    agent: sessionId,
   });
 
   const {
@@ -155,7 +166,15 @@ export default function Chat() {
             size="md"
             shape="square"
             className="rounded-full h-9 w-9"
-            onClick={clearHistory}
+            onClick={() => {
+              clearHistory();
+              // Optionally, generate a new session ID to start fresh
+              // Uncomment the following lines if you want a new session on clear
+              // const newId = `session-${crypto.randomUUID()}`;
+              // localStorage.setItem("cutty-session-id", newId);
+              // window.location.reload(); // Reload to use new session
+            }}
+            title="Clear chat history"
           >
             <Trash size={20} />
           </Button>
