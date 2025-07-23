@@ -13,8 +13,7 @@
     "bindings": [
       {
         "name": "Chat",
-        "class_name": "Chat",
-        "script_name": "cutty-agent"
+        "class_name": "Chat"
       }
     ]
   },
