@@ -37,6 +37,15 @@ export default function Chat() {
   const [showDebug, setShowDebug] = useState(false);
   const [textareaHeight, setTextareaHeight] = useState("auto");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Generate a unique session ID for this specific tab
+  const [sessionId] = useState(() => {
+    // Generate a new unique session ID for each tab
+    // This ensures each tab has its own isolated chat session
+    const id = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log("Generated session ID:", id);
+    return id;
+  });
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,6 +77,7 @@ export default function Chat() {
 
   const agent = useAgent({
     agent: "chat",
+    name: sessionId, // Use the unique session ID for this browser session
   });
 
   const {
@@ -129,6 +139,9 @@ export default function Chat() {
 
           <div className="flex-1">
             <h2 className="font-semibold text-base">AI Chat Agent</h2>
+            {showDebug && (
+              <p className="text-xs text-muted-foreground">Session: {sessionId.slice(-8)}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 mr-2">
