@@ -289,6 +289,10 @@ export default function Chat() {
                       <div>
                         {m.parts?.map((part, i) => {
                           if (part.type === "text") {
+                            // Skip rendering empty text parts
+                            if (!part.text || part.text.trim() === "") {
+                              return null;
+                            }
                             return (
                               // biome-ignore lint/suspicious/noArrayIndexKey: immutable index
                               <div key={i}>
