@@ -26,7 +26,12 @@ import {
 
 // List of tools that require human confirmation
 // NOTE: this should match the keys in the executions object in tools.ts
-const toolsRequiringConfirmation: (keyof typeof tools)[] = ["explainFeature"];
+const toolsRequiringConfirmation: (keyof typeof tools)[] = [
+  // All tools now execute automatically without confirmation
+  // "explainFeature",
+  // "generateSyntheticData", 
+  // "downloadGeneratedData"
+];
 
 export default function Chat() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {

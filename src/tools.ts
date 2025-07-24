@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { cuttyAPI } from "./cutty-api";
 
 // Single read-only tool for PoC
 export const getSupportedStates = tool({
@@ -7,8 +8,8 @@ export const getSupportedStates = tool({
     "Get the list of US states supported for synthetic data generation",
   parameters: z.object({}),
   execute: async () => {
-    // Hardcoded for PoC - matches main app
-    const states = ["CA", "FL", "GA", "IL", "NY", "OH", "PA", "TX"];
+    // Fetch from API instead of hardcoding
+    const states = await cuttyAPI.getSupportedStates();
     return {
       success: true,
       states,
@@ -18,13 +19,177 @@ export const getSupportedStates = tool({
   },
 });
 
-// Tool that requires confirmation (for testing confirmation flow)
+// Tool with automatic execution
 export const explainFeature = tool({
   description: "Explain a Cutty app feature in detail",
   parameters: z.object({
     feature: z.string().describe("The feature to explain"),
   }),
-  // No execute function = requires confirmation
+  execute: async ({ feature }: { feature: string }) => {
+    const featureExplanations: Record<string, string> = {
+      "list generation":
+        "The List Generation feature allows you to create synthetic patient lists using realistic demographic data. You can specify the state, number of patients, and various demographic parameters to generate lists that match your testing needs.",
+      "data export":
+        "The Data Export feature lets you download your generated lists in multiple formats including CSV, JSON, and Excel. You can customize which fields to include and apply filters before exporting.",
+      "team collaboration":
+        "Team Collaboration features allow multiple users to work on the same lists, share generated data, and maintain consistent test datasets across your organization.",
+      "api access":
+        "The API Access feature provides programmatic access to all list generation capabilities, allowing you to integrate synthetic data generation into your automated testing workflows.",
+    };
+
+    const explanation =
+      featureExplanations[feature.toLowerCase()] ||
+      `The ${feature} feature is an important part of the Cutty app that helps you work more efficiently with synthetic healthcare data.`;
+
+    return {
+      feature,
+      explanation,
+      relatedFeatures: Object.keys(featureExplanations).filter(
+        (f) => f !== feature.toLowerCase()
+      ),
+    };
+  },
+});
+
+// Tool for generating synthetic data with automatic execution
+export const generateSyntheticData = tool({
+  description: "Generate synthetic patient data for testing purposes",
+  parameters: z.object({
+    count: z.number()
+      .min(1)
+      .max(1000)
+      .describe("Number of records to generate (1-1000)"),
+    states: z.array(z.string())
+      .optional()
+      .describe("List of state codes to generate data for (e.g., ['CA', 'NY']). If not specified, data will be generated for all available states"),
+  }),
+  execute: async ({ count, states }: { count: number; states?: string[] }) => {
+    try {
+      // Call the Cutty API to generate synthetic data
+      const response = await cuttyAPI.generateSyntheticData({ count, states });
+
+      if (!response.success) {
+        return {
+          success: false,
+          error: response.error || "Failed to generate synthetic data",
+          details: response.details,
+        };
+      }
+
+      // Store the file info in a global variable for the download tool
+      // In a real implementation, this would be stored in session state
+      if (typeof window !== 'undefined') {
+        (window as any).__lastGeneratedFile = {
+          fileId: response.file?.id,
+          downloadUrl: response.file?.downloadUrl,
+          filename: response.file?.name,
+          generatedAt: response.metadata?.generatedAt,
+        };
+      }
+
+      // Prepare a user-friendly response
+      const stateInfo = response.metadata?.states?.length 
+        ? ` for ${response.metadata.states.join(", ")}`
+        : response.metadata?.state 
+        ? ` for ${response.metadata.state}`
+        : "";
+
+      return {
+        success: true,
+        message: `Successfully generated ${response.metadata?.recordCount} synthetic patient records${stateInfo}.`,
+        file: {
+          id: response.file?.id,
+          name: response.file?.name,
+          size: response.file?.size,
+          downloadUrl: response.file?.downloadUrl,
+        },
+        metadata: response.metadata,
+        downloadInstructions: "You can now use the 'downloadGeneratedData' tool to download your file.",
+      };
+    } catch (error) {
+      console.error("Error generating synthetic data:", error);
+      return {
+        success: false,
+        error: "An unexpected error occurred while generating synthetic data",
+        details: error instanceof Error ? [error.message] : ["Unknown error"],
+      };
+    }
+  },
+});
+
+// Tool for downloading generated data with automatic execution
+export const downloadGeneratedData = tool({
+  description: "Download the most recently generated synthetic data file",
+  parameters: z.object({
+    fileId: z.string()
+      .optional()
+      .describe("Specific file ID to download. If not provided, downloads the most recent file"),
+  }),
+  execute: async ({ fileId }: { fileId?: string }) => {
+    try {
+      let downloadInfo: any;
+
+      if (fileId) {
+        // Use the provided file ID
+        downloadInfo = {
+          fileId,
+          downloadUrl: cuttyAPI.getDownloadUrl(fileId),
+          filename: `synthetic-data-${fileId}.csv`,
+        };
+      } else if (typeof window !== 'undefined' && (window as any).__lastGeneratedFile) {
+        // Use the last generated file
+        downloadInfo = (window as any).__lastGeneratedFile;
+      } else {
+        return {
+          success: false,
+          error: "No file to download",
+          message: "No recently generated files found. Please generate synthetic data first using the 'generateSyntheticData' tool.",
+        };
+      }
+
+      // Trigger the download
+      const downloadSuccess = await cuttyAPI.downloadFile(
+        downloadInfo.downloadUrl,
+        downloadInfo.filename
+      );
+
+      if (downloadSuccess) {
+        return {
+          success: true,
+          message: `Download started for file: ${downloadInfo.filename}`,
+          fileId: downloadInfo.fileId,
+        };
+      } else {
+        return {
+          success: false,
+          error: "Download failed",
+          message: "Failed to download the file. Please try again or generate a new file.",
+        };
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      return {
+        success: false,
+        error: "An unexpected error occurred while downloading",
+        details: error instanceof Error ? [error.message] : ["Unknown error"],
+      };
+    }
+  },
+});
+
+// Read-only tool to check generation status
+export const getSyntheticDataStatus = tool({
+  description: "Check the status of synthetic data generation",
+  parameters: z.object({}),
+  execute: async () => {
+    // For now, return a simple status
+    // In a real implementation, this would check session state
+    return {
+      success: true,
+      hasRecentGeneration: false,
+      message: "No recent synthetic data generation found. Use the 'generateSyntheticData' tool to create new data.",
+    };
+  },
 });
 
 /**
@@ -34,6 +199,9 @@ export const explainFeature = tool({
 export const tools = {
   getSupportedStates,
   explainFeature,
+  generateSyntheticData,
+  downloadGeneratedData,
+  getSyntheticDataStatus,
 };
 
 /**
@@ -66,5 +234,109 @@ export const executions = {
         (f) => f !== feature.toLowerCase()
       ),
     };
+  },
+
+  generateSyntheticData: async ({ count, states }: { count: number; states?: string[] }) => {
+    try {
+      // Call the Cutty API to generate synthetic data
+      const response = await cuttyAPI.generateSyntheticData({ count, states });
+
+      if (!response.success) {
+        return {
+          success: false,
+          error: response.error || "Failed to generate synthetic data",
+          details: response.details,
+        };
+      }
+
+      // Store the file info in a global variable for the download tool
+      // In a real implementation, this would be stored in session state
+      if (typeof window !== 'undefined') {
+        (window as any).__lastGeneratedFile = {
+          fileId: response.file?.id,
+          downloadUrl: response.file?.downloadUrl,
+          filename: response.file?.name,
+          generatedAt: response.metadata?.generatedAt,
+        };
+      }
+
+      // Prepare a user-friendly response
+      const stateInfo = response.metadata?.states?.length 
+        ? ` for ${response.metadata.states.join(", ")}`
+        : response.metadata?.state 
+        ? ` for ${response.metadata.state}`
+        : "";
+
+      return {
+        success: true,
+        message: `Successfully generated ${response.metadata?.recordCount} synthetic patient records${stateInfo}.`,
+        file: {
+          id: response.file?.id,
+          name: response.file?.name,
+          size: response.file?.size,
+          downloadUrl: response.file?.downloadUrl,
+        },
+        metadata: response.metadata,
+        downloadInstructions: "You can now use the 'downloadGeneratedData' tool to download your file.",
+      };
+    } catch (error) {
+      console.error("Error generating synthetic data:", error);
+      return {
+        success: false,
+        error: "An unexpected error occurred while generating synthetic data",
+        details: error instanceof Error ? [error.message] : ["Unknown error"],
+      };
+    }
+  },
+
+  downloadGeneratedData: async ({ fileId }: { fileId?: string }) => {
+    try {
+      let downloadInfo: any;
+
+      if (fileId) {
+        // Use the provided file ID
+        downloadInfo = {
+          fileId,
+          downloadUrl: cuttyAPI.getDownloadUrl(fileId),
+          filename: `synthetic-data-${fileId}.csv`,
+        };
+      } else if (typeof window !== 'undefined' && (window as any).__lastGeneratedFile) {
+        // Use the last generated file
+        downloadInfo = (window as any).__lastGeneratedFile;
+      } else {
+        return {
+          success: false,
+          error: "No file to download",
+          message: "No recently generated files found. Please generate synthetic data first using the 'generateSyntheticData' tool.",
+        };
+      }
+
+      // Trigger the download
+      const downloadSuccess = await cuttyAPI.downloadFile(
+        downloadInfo.downloadUrl,
+        downloadInfo.filename
+      );
+
+      if (downloadSuccess) {
+        return {
+          success: true,
+          message: `Download started for file: ${downloadInfo.filename}`,
+          fileId: downloadInfo.fileId,
+        };
+      } else {
+        return {
+          success: false,
+          error: "Download failed",
+          message: "Failed to download the file. Please try again or generate a new file.",
+        };
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      return {
+        success: false,
+        error: "An unexpected error occurred while downloading",
+        details: error instanceof Error ? [error.message] : ["Unknown error"],
+      };
+    }
   },
 };
