@@ -1,35 +1,33 @@
-import { useEffect, useState, useRef, useCallback, use } from "react";
-import { useAgent } from "agents/react";
-import { useAgentChat } from "agents/ai-react";
 import type { Message } from "@ai-sdk/react";
-import type { tools } from "./tools";
-
-// Component imports
-import { Button } from "@/components/button/Button";
-import { Card } from "@/components/card/Card";
-import { Avatar } from "@/components/avatar/Avatar";
-import { Toggle } from "@/components/toggle/Toggle";
-import { Textarea } from "@/components/textarea/Textarea";
-import { MemoizedMarkdown } from "@/components/memoized-markdown";
-import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
-
 // Icon imports
 import {
   Bug,
   Moon,
+  PaperPlaneTilt,
   Robot,
+  Stop,
   Sun,
   Trash,
-  PaperPlaneTilt,
-  Stop,
 } from "@phosphor-icons/react";
+import { useAgentChat } from "agents/ai-react";
+import { useAgent } from "agents/react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
+import { Avatar } from "@/components/avatar/Avatar";
+// Component imports
+import { Button } from "@/components/button/Button";
+import { Card } from "@/components/card/Card";
+import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { Textarea } from "@/components/textarea/Textarea";
+import { Toggle } from "@/components/toggle/Toggle";
+import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
+import type { tools } from "./tools";
 
 // List of tools that require human confirmation
 // NOTE: this should match the keys in the executions object in tools.ts
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
   // All tools now execute automatically without confirmation
   // "explainFeature",
-  // "generateSyntheticData", 
+  // "generateSyntheticData",
   // "downloadGeneratedData"
 ];
 
@@ -42,43 +40,55 @@ export default function Chat() {
   const [showDebug, setShowDebug] = useState(false);
   const [textareaHeight, setTextareaHeight] = useState("auto");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Generate a unique session ID for this specific tab
   const [sessionId] = useState(() => {
     // Check if we already have a session ID in sessionStorage
-    const existingId = window.sessionStorage.getItem('cutty-session-id');
+    const existingId = window.sessionStorage.getItem("cutty-session-id");
     if (existingId) {
       console.log("Using existing session ID:", existingId);
       return existingId;
     }
-    
+
     // Generate a new unique session ID for each tab
     // This ensures each tab has its own isolated chat session
     const id = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log("Generated new session ID:", id);
-    window.sessionStorage.setItem('cutty-session-id', id);
+    window.sessionStorage.setItem("cutty-session-id", id);
     return id;
   });
-  
+
   // Intercept fetch to add session ID to agent API calls
   useEffect(() => {
-    console.log(`[Client] Setting up fetch interceptor for session: ${sessionId}`);
+    console.log(
+      `[Client] Setting up fetch interceptor for session: ${sessionId}`
+    );
     const originalFetch = window.fetch;
-    
+
     // Create our interceptor
-    const interceptedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
-      
+    const interceptedFetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit
+    ): Promise<Response> => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof Request
+            ? input.url
+            : input.toString();
+
       console.log(`[Client] Intercepted fetch to: ${url}`);
-      
+
       // Add session ID to all agent-related calls
-      if (url.includes('/agents/')) {
+      if (url.includes("/agents/")) {
         const modifiedUrl = new URL(url, window.location.origin);
-        modifiedUrl.searchParams.set('sessionId', sessionId);
-        
-        console.log(`[Client] Adding sessionId to request: ${modifiedUrl.toString()}`);
-        
-        if (typeof input === 'string') {
+        modifiedUrl.searchParams.set("sessionId", sessionId);
+
+        console.log(
+          `[Client] Adding sessionId to request: ${modifiedUrl.toString()}`
+        );
+
+        if (typeof input === "string") {
           return originalFetch(modifiedUrl.toString(), init);
         } else if (input instanceof Request) {
           const modifiedRequest = new Request(modifiedUrl.toString(), input);
@@ -87,13 +97,13 @@ export default function Chat() {
           return originalFetch(modifiedUrl, init);
         }
       }
-      
+
       return originalFetch(input, init);
     };
-    
+
     // Override global fetch
     window.fetch = interceptedFetch;
-    
+
     // Cleanup on unmount
     return () => {
       console.log(`[Client] Cleaning up fetch interceptor`);
@@ -131,9 +141,9 @@ export default function Chat() {
 
   const agent = useAgent({
     agent: "chat",
-    name: sessionId,
     // Override the default API path to include session ID
     apiPath: `/agents/chat/${sessionId}`,
+    name: sessionId,
   });
 
   const {
@@ -196,7 +206,9 @@ export default function Chat() {
           <div className="flex-1">
             <h2 className="font-semibold text-base">AI Chat Agent</h2>
             {showDebug && (
-              <p className="text-xs text-muted-foreground">Session: {sessionId.slice(-8)}</p>
+              <p className="text-xs text-muted-foreground">
+                Session: {sessionId.slice(-8)}
+              </p>
             )}
           </div>
 

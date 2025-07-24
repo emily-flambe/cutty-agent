@@ -96,8 +96,8 @@ export async function processToolCalls<
       // Forward updated tool result to the client.
       dataStream.write(
         formatDataStreamPart("tool_result", {
-          toolCallId: toolInvocation.toolCallId,
           result,
+          toolCallId: toolInvocation.toolCallId,
         })
       );
 

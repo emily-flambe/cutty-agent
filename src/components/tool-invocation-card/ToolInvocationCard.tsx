@@ -1,5 +1,5 @@
+import { CaretDown, Robot } from "@phosphor-icons/react";
 import { useState } from "react";
-import { Robot, CaretDown } from "@phosphor-icons/react";
 import { Button } from "@/components/button/Button";
 import { Card } from "@/components/card/Card";
 import { Tooltip } from "@/components/tooltip/Tooltip";
@@ -82,8 +82,8 @@ export function ToolInvocationCard({
                 size="sm"
                 onClick={() =>
                   addToolResult({
-                    toolCallId,
                     result: APPROVAL.NO,
+                    toolCallId,
                   })
                 }
               >
@@ -95,8 +95,8 @@ export function ToolInvocationCard({
                   size="sm"
                   onClick={() =>
                     addToolResult({
-                      toolCallId,
                       result: APPROVAL.YES,
+                      toolCallId,
                     })
                   }
                 >
