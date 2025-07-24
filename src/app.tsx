@@ -40,12 +40,61 @@ export default function Chat() {
   
   // Generate a unique session ID for this specific tab
   const [sessionId] = useState(() => {
+    // Check if we already have a session ID in sessionStorage
+    const existingId = window.sessionStorage.getItem('cutty-session-id');
+    if (existingId) {
+      console.log("Using existing session ID:", existingId);
+      return existingId;
+    }
+    
     // Generate a new unique session ID for each tab
     // This ensures each tab has its own isolated chat session
     const id = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    console.log("Generated session ID:", id);
+    console.log("Generated new session ID:", id);
+    window.sessionStorage.setItem('cutty-session-id', id);
     return id;
   });
+  
+  // Intercept fetch to add session ID to agent API calls
+  useEffect(() => {
+    console.log(`[Client] Setting up fetch interceptor for session: ${sessionId}`);
+    const originalFetch = window.fetch;
+    
+    // Create our interceptor
+    const interceptedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+      
+      console.log(`[Client] Intercepted fetch to: ${url}`);
+      
+      // Add session ID to all agent-related calls
+      if (url.includes('/agents/')) {
+        const modifiedUrl = new URL(url, window.location.origin);
+        modifiedUrl.searchParams.set('sessionId', sessionId);
+        
+        console.log(`[Client] Adding sessionId to request: ${modifiedUrl.toString()}`);
+        
+        if (typeof input === 'string') {
+          return originalFetch(modifiedUrl.toString(), init);
+        } else if (input instanceof Request) {
+          const modifiedRequest = new Request(modifiedUrl.toString(), input);
+          return originalFetch(modifiedRequest, init);
+        } else {
+          return originalFetch(modifiedUrl, init);
+        }
+      }
+      
+      return originalFetch(input, init);
+    };
+    
+    // Override global fetch
+    window.fetch = interceptedFetch;
+    
+    // Cleanup on unmount
+    return () => {
+      console.log(`[Client] Cleaning up fetch interceptor`);
+      window.fetch = originalFetch;
+    };
+  }, [sessionId]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,7 +126,9 @@ export default function Chat() {
 
   const agent = useAgent({
     agent: "chat",
-    name: sessionId, // Use the unique session ID for this browser session
+    name: sessionId,
+    // Override the default API path to include session ID
+    apiPath: `/agents/chat/${sessionId}`,
   });
 
   const {

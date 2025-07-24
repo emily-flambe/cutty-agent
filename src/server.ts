@@ -112,7 +112,7 @@ If the user asks to schedule a task, use the schedule tool to schedule the task.
  * Worker entry point that routes incoming requests to the appropriate handler
  */
 export default {
-  async fetch(request: Request, env: Env, _ctx: ExecutionContext) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
 
     if (url.pathname === "/check-api-key") {
@@ -126,6 +126,44 @@ export default {
         "ANTHROPIC_API_KEY is not set, don't forget to set it locally in .dev.vars, and use `wrangler secret bulk .dev.vars` to upload it to production"
       );
     }
+    
+    // Extract session ID from URL or headers
+    const sessionId = url.searchParams.get('sessionId') || 
+                     request.headers.get('X-Session-Id') ||
+                     'default-session';
+    
+    console.log(`[Session Isolation] Request to ${url.pathname} with session ID: ${sessionId}`);
+    
+    // For all agent routes, we need to handle session-specific routing
+    if (url.pathname.startsWith('/agents/')) {
+      // Parse the agent path to extract the agent name and ID
+      const pathParts = url.pathname.split('/');
+      // Format: /agents/{agentName}/{id}/...
+      if (pathParts.length >= 4) {
+        const agentName = pathParts[2]; // e.g., "chat"
+        const originalId = pathParts[3]; // e.g., "default"
+        
+        // Replace the ID in the path with session-specific ID
+        if (originalId === 'default') {
+          pathParts[3] = sessionId;
+          const newPath = pathParts.join('/');
+          
+          // Create a new request with the modified path
+          const modifiedUrl = new URL(request.url);
+          modifiedUrl.pathname = newPath;
+          
+          console.log(`[Session Isolation] Rewriting path from ${url.pathname} to ${newPath}`);
+          
+          const modifiedRequest = new Request(modifiedUrl.toString(), request);
+          
+          return (
+            (await routeAgentRequest(modifiedRequest, env)) ||
+            new Response("Not found", { status: 404 })
+          );
+        }
+      }
+    }
+    
     return (
       // Route the request to our agent or return 404 if not found
       (await routeAgentRequest(request, env)) ||

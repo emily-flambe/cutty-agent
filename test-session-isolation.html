@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Isolation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .chat-frame {
+            flex: 1;
+            height: 600px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .instructions {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .instructions h2 {
+            margin-top: 0;
+        }
+        .instructions ol {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cutty Agent - Session Isolation Test</h1>
+    
+    <div class="instructions">
+        <h2>Testing Instructions:</h2>
+        <ol>
+            <li>Start the development server: <code>npm run dev</code></li>
+            <li>Open this file in your browser</li>
+            <li>Send different messages in each chat window below</li>
+            <li>Verify that each window maintains its own conversation history</li>
+            <li>Try refreshing individual frames - they should maintain their own sessions</li>
+        </ol>
+    </div>
+    
+    <div class="container">
+        <div class="chat-frame">
+            <h3>Chat Session 1</h3>
+            <iframe src="http://localhost:8789/" title="Chat Session 1"></iframe>
+        </div>
+        <div class="chat-frame">
+            <h3>Chat Session 2</h3>
+            <iframe src="http://localhost:8789/" title="Chat Session 2"></iframe>
+        </div>
+    </div>
+    
+    <script>
+        // Log any errors from the iframes
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'error') {
+                console.error('Error from iframe:', event.data);
+            }
+        });
+    </script>
+</body>
+</html>

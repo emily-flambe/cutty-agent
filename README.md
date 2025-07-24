@@ -25,10 +25,12 @@ This is an experimental implementation to validate the feasibility of migrating 
 - Anthropic Claude 3.5 Sonnet for language processing
 - Streaming responses for real-time interaction
 - Tool system for executing actions
+- Session isolation for multiple concurrent users
 
 ## PoC Goals
 
 - [ ] Successfully deploy agent
 - [ ] Connect from Cutty frontend
 - [ ] Execute one tool successfully
+- [x] Implement session isolation
 - [ ] Document findings
