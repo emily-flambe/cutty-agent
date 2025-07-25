@@ -47,10 +47,19 @@ export const globalSessionManager = {
   /**
    * Set the current active session
    */
-  setCurrentSession(sessionId: string) {
+  setCurrentSession(sessionId: string, origin?: string) {
     currentSessionId = sessionId;
     if (!sessionManagers.has(sessionId)) {
-      sessionManagers.set(sessionId, new SessionStateManager(sessionId));
+      sessionManagers.set(
+        sessionId,
+        new SessionStateManager(sessionId, origin)
+      );
+    } else if (origin) {
+      // Update origin if provided
+      const manager = sessionManagers.get(sessionId);
+      if (manager) {
+        manager.setOrigin(origin);
+      }
     }
   },
 
@@ -62,5 +71,13 @@ export const globalSessionManager = {
     if (manager) {
       manager.addGeneratedFile(fileInfo);
     }
+  },
+
+  /**
+   * Get the current session state
+   */
+  getCurrentSessionState() {
+    const manager = this.getCurrentSessionManager();
+    return manager ? manager.getState() : null;
   },
 };

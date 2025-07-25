@@ -33,8 +33,9 @@ export interface SupportedStatesResponse {
 
 export class CuttyAPIClient {
   private baseURL: string;
+  private origin: string;
 
-  constructor(baseURL?: string) {
+  constructor(baseURL?: string, origin?: string) {
     // Use environment-based configuration
     if (!baseURL) {
       // Check for environment variable first (server-side)
@@ -46,7 +47,8 @@ export class CuttyAPIClient {
         if (hostname === "localhost") {
           baseURL = "http://localhost:8787";
         } else {
-          // All production domains use production API
+          // Always use production API due to CSP restrictions
+          // Each Cutty deployment has its own CSP that only allows its own domain
           baseURL = "https://cutty.emilycogsdill.com";
         }
       } else {
@@ -56,6 +58,9 @@ export class CuttyAPIClient {
     }
     // Remove trailing slash if present
     this.baseURL = baseURL.replace(/\/$/, "");
+
+    // Set origin - this is where the download URLs should point to
+    this.origin = origin || this.baseURL;
   }
 
   /**
@@ -179,9 +184,16 @@ export class CuttyAPIClient {
    */
   getDownloadUrl(fileId: string, isAnonymous: boolean = true): string {
     if (isAnonymous) {
-      return `/api/v1/synthetic-data/download/${fileId}`;
+      return `${this.origin}/api/v1/synthetic-data/download/${fileId}`;
     }
-    return `/api/v1/files/${fileId}`;
+    return `${this.origin}/api/v1/files/${fileId}`;
+  }
+
+  /**
+   * Update the origin for this client instance
+   */
+  setOrigin(origin: string): void {
+    this.origin = origin;
   }
 
   /**

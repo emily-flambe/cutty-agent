@@ -20,17 +20,34 @@ export interface SessionState {
   generatedFiles: GeneratedFileInfo[];
   lastActivity: string;
   sessionId: string;
+  origin?: string;
 }
 
 export class SessionStateManager {
   private state: SessionState;
 
-  constructor(sessionId: string) {
+  constructor(sessionId: string, origin?: string) {
     this.state = {
       generatedFiles: [],
       lastActivity: new Date().toISOString(),
       sessionId,
+      origin: origin || "https://cutty.emilycogsdill.com",
     };
+  }
+
+  /**
+   * Get the origin for this session
+   */
+  getOrigin(): string {
+    return this.state.origin || "https://cutty.emilycogsdill.com";
+  }
+
+  /**
+   * Update the origin for this session
+   */
+  setOrigin(origin: string): void {
+    this.state.origin = origin;
+    this.state.lastActivity = new Date().toISOString();
   }
 
   /**
