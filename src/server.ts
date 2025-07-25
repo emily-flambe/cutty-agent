@@ -25,6 +25,44 @@ const model = anthropic("claude-3-5-sonnet-20241022");
  */
 export class Chat extends AIChatAgent<Env> {
   private sessionStateManager!: SessionStateManager;
+  private origin: string = "https://cutty.emilycogsdill.com"; // Default fallback
+
+  /**
+   * Handles WebSocket connection initialization
+   * Extracts origin from the connection URL
+   */
+  async onConnect(
+    connection: Connection,
+    ctx: { request: Request }
+  ): Promise<void> {
+    try {
+      const url = new URL(ctx.request.url);
+      const originParam = url.searchParams.get("origin");
+
+      // Validate and set origin
+      const allowedOrigins = [
+        "https://cutty.emilycogsdill.com",
+        "https://cutty-dev.emilycogsdill.com",
+        "http://localhost:5173",
+        "http://localhost:3000",
+      ];
+
+      if (originParam && allowedOrigins.includes(originParam)) {
+        this.origin = originParam;
+        console.log(
+          `[WebSocket] Origin set from URL parameter: ${this.origin}`
+        );
+      } else {
+        console.log(`[WebSocket] Using default origin: ${this.origin}`);
+      }
+    } catch (error) {
+      console.error("Failed to parse origin from connection URL:", error);
+    }
+
+    // Call parent onConnect
+    return super.onConnect(connection, ctx);
+  }
+
   /**
    * Handles WebSocket messages from the frontend
    * Overrides the default onMessage to support custom message format
@@ -45,6 +83,37 @@ export class Chat extends AIChatAgent<Env> {
           `[WebSocket] Received message from frontend: ${data.message}`
         );
         console.log(`[WebSocket] Context:`, data.context);
+        console.log(`[WebSocket] Metadata:`, data.metadata);
+
+        // Check for origin in context, top-level metadata, or first message metadata
+        let messageOrigin = data.context?.origin || data.metadata?.origin;
+        
+        // If not found at top level, check in the first message's metadata
+        if (!messageOrigin && data.messages && data.messages.length > 0) {
+          messageOrigin = data.messages[0].metadata?.origin;
+        }
+        
+        if (messageOrigin) {
+          const allowedOrigins = [
+            "https://cutty.emilycogsdill.com",
+            "https://cutty-dev.emilycogsdill.com",
+            "http://localhost:5173",
+            "http://localhost:3000",
+          ];
+
+          if (allowedOrigins.includes(messageOrigin)) {
+            this.origin = messageOrigin;
+            console.log(
+              `[WebSocket] Origin updated from message: ${this.origin}`
+            );
+            // Update session state immediately
+            this.sessionStateManager.setOrigin(this.origin);
+          } else {
+            console.log(
+              `[WebSocket] Ignoring untrusted origin: ${messageOrigin}`
+            );
+          }
+        }
 
         // Convert frontend format to agent format
         const messageId = generateId();
@@ -99,12 +168,18 @@ export class Chat extends AIChatAgent<Env> {
       // Extract session ID from the first message metadata or generate a new one
       const sessionId =
         (this.messages[0] as any)?.metadata?.sessionId || generateId();
-      this.sessionStateManager = new SessionStateManager(sessionId);
+      this.sessionStateManager = new SessionStateManager(
+        sessionId,
+        this.origin
+      );
+    } else {
+      // Update origin in session state if it changed
+      this.sessionStateManager.setOrigin(this.origin);
     }
 
     // Set the current session for tool executions
     const sessionId = this.sessionStateManager.getState().sessionId;
-    globalSessionManager.setCurrentSession(sessionId);
+    globalSessionManager.setCurrentSession(sessionId, this.origin);
 
     // const mcpConnection = await this.mcp.connect(
     //   "https://path-to-mcp-server/sse"
@@ -154,7 +229,7 @@ You can:
 - Create download links
 - Explain app features
 
-CRITICAL: When you call generateSyntheticData, ALWAYS share the download link that is included in the response. The download link will be in the format "[Download File](url)" - you MUST include this link in your response to the user.
+CRITICAL: When you call generateSyntheticData, ALWAYS share the download link EXACTLY as it appears in the response, including the filename. The link will be in the format "[filename.csv](url)" - you MUST include this exact link in your response to the user without modifying the link text.
 
 ${unstable_getSchedulePrompt({ date: new Date() })}
 `,

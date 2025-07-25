@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { cuttyAPI } from "./cutty-api";
+import { CuttyAPIClient, cuttyAPI } from "./cutty-api";
 import { globalSessionManager } from "./global-session-manager";
 import type { GeneratedFileInfo } from "./session-state";
 
@@ -54,11 +54,20 @@ export const explainFeature = tool({
 
 // Tool for generating synthetic data with automatic execution
 export const generateSyntheticData = tool({
-  description: "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
+  description:
+    "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
   execute: async ({ count, states }: { count: number; states?: string[] }) => {
     try {
+      // Get the origin from the current session
+      const sessionState = globalSessionManager.getCurrentSessionState();
+      const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
+
+      // Create a CuttyAPIClient instance with the correct origin
+      const apiClient = new CuttyAPIClient(undefined, origin);
+
       // Call the Cutty API to generate synthetic data
-      const response = await cuttyAPI.generateSyntheticData({ count, states });
+      const response = await apiClient.generateSyntheticData({ count, states });
 
       if (!response.success) {
         return {
@@ -70,8 +79,11 @@ export const generateSyntheticData = tool({
 
       // Store the file info in session state
       if (response.file) {
+        // Generate the full download URL using the origin
+        const fullDownloadUrl = apiClient.getDownloadUrl(response.file.id);
+
         globalSessionManager.storeGeneratedFile({
-          downloadUrl: response.file.downloadUrl,
+          downloadUrl: fullDownloadUrl,
           fileId: response.file.id,
           filename: response.file.name,
           generatedAt:
@@ -95,16 +107,14 @@ export const generateSyntheticData = tool({
           : "";
 
       // Include download link in the message for the AI to see
-      // Need to construct full URL for markdown links to work properly
-      const fullDownloadUrl = response.file?.downloadUrl 
-        ? (response.file.downloadUrl.startsWith('http') 
-            ? response.file.downloadUrl 
-            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
-        : '';
+      // Use the same full URL that was stored
+      const fullDownloadUrl = response.file
+        ? apiClient.getDownloadUrl(response.file.id)
+        : "";
       const downloadLink = fullDownloadUrl
-        ? `\n\n[Download Your Data](${fullDownloadUrl})`
-        : '';
-      
+        ? `\n\n[${response.file?.name || 'Download Your Data'}](${fullDownloadUrl})`
+        : "";
+
       return {
         downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
@@ -147,6 +157,14 @@ export const createDownloadLink = tool({
     "Create a download link for the most recently generated synthetic data file",
   execute: async ({ fileId }: { fileId?: string }) => {
     try {
+      // Get the origin from the current session
+      const sessionState = globalSessionManager.getCurrentSessionState();
+      const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
+
+      // Create a CuttyAPIClient instance with the correct origin
+      const apiClient = new CuttyAPIClient(undefined, origin);
+
       let downloadInfo: GeneratedFileInfo & {
         downloadUrl: string;
         filename: string;
@@ -155,7 +173,7 @@ export const createDownloadLink = tool({
       if (fileId) {
         // Use the provided file ID
         downloadInfo = {
-          downloadUrl: cuttyAPI.getDownloadUrl(fileId),
+          downloadUrl: apiClient.getDownloadUrl(fileId),
           fileId,
           filename: `synthetic-data-${fileId}.csv`,
           generatedAt: new Date().toISOString(),
@@ -182,7 +200,7 @@ export const createDownloadLink = tool({
       }
 
       // Return a message with a clickable download link
-      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
+      const downloadMessage = `Your file is ready! Click here to download: [${downloadInfo.filename}](${downloadInfo.downloadUrl})
 
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
@@ -250,6 +268,14 @@ export const executions = {
   createDownloadLink: async (args: unknown, _context?: any) => {
     const { fileId } = args as { fileId?: string };
     try {
+      // Get the origin from the current session
+      const sessionState = globalSessionManager.getCurrentSessionState();
+      const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
+
+      // Create a CuttyAPIClient instance with the correct origin
+      const apiClient = new CuttyAPIClient(undefined, origin);
+
       let downloadInfo: GeneratedFileInfo & {
         downloadUrl: string;
         filename: string;
@@ -258,7 +284,7 @@ export const executions = {
       if (fileId) {
         // Use the provided file ID
         downloadInfo = {
-          downloadUrl: cuttyAPI.getDownloadUrl(fileId),
+          downloadUrl: apiClient.getDownloadUrl(fileId),
           fileId,
           filename: `synthetic-data-${fileId}.csv`,
           generatedAt: new Date().toISOString(),
@@ -285,7 +311,7 @@ export const executions = {
       }
 
       // Return a message with a clickable download link
-      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
+      const downloadMessage = `Your file is ready! Click here to download: [${downloadInfo.filename}](${downloadInfo.downloadUrl})
 
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
@@ -336,8 +362,16 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
       states?: string[];
     };
     try {
+      // Get the origin from the current session
+      const sessionState = globalSessionManager.getCurrentSessionState();
+      const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
+
+      // Create a CuttyAPIClient instance with the correct origin
+      const apiClient = new CuttyAPIClient(undefined, origin);
+
       // Call the Cutty API to generate synthetic data
-      const response = await cuttyAPI.generateSyntheticData({ count, states });
+      const response = await apiClient.generateSyntheticData({ count, states });
 
       if (!response.success) {
         return {
@@ -349,8 +383,11 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
 
       // Store the file info in session state
       if (response.file) {
+        // Generate the full download URL using the origin
+        const fullDownloadUrl = apiClient.getDownloadUrl(response.file.id);
+
         globalSessionManager.storeGeneratedFile({
-          downloadUrl: response.file.downloadUrl,
+          downloadUrl: fullDownloadUrl,
           fileId: response.file.id,
           filename: response.file.name,
           generatedAt:
@@ -374,16 +411,14 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
           : "";
 
       // Include download link in the message for the AI to see
-      // Need to construct full URL for markdown links to work properly
-      const fullDownloadUrl = response.file?.downloadUrl 
-        ? (response.file.downloadUrl.startsWith('http') 
-            ? response.file.downloadUrl 
-            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
-        : '';
+      // Use the same full URL that was stored
+      const fullDownloadUrl = response.file
+        ? apiClient.getDownloadUrl(response.file.id)
+        : "";
       const downloadLink = fullDownloadUrl
-        ? `\n\n[Download Your Data](${fullDownloadUrl})`
-        : '';
-      
+        ? `\n\n[${response.file?.name || 'Download Your Data'}](${fullDownloadUrl})`
+        : "";
+
       return {
         downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {

@@ -33,31 +33,38 @@ export interface SupportedStatesResponse {
 
 export class CuttyAPIClient {
   private baseURL: string;
+  private origin: string;
 
-  constructor(baseURL?: string) {
-    // Use environment-based configuration
-    if (!baseURL) {
-      // Check for environment variable first (server-side)
-      if (typeof process !== "undefined" && process.env?.CUTTY_API_BASE_URL) {
-        baseURL = process.env.CUTTY_API_BASE_URL;
-      } else if (typeof window !== "undefined") {
-        // Client-side: determine based on hostname
-        const hostname = window.location.hostname;
-        if (hostname === "localhost") {
-          baseURL = "http://localhost:8787";
-        } else if (hostname.includes("-dev")) {
-          // If running on a dev subdomain, use the dev API
-          baseURL = "https://cutty-dev.emilycogsdill.com";
+  constructor(baseURL?: string, origin?: string) {
+    // If origin is provided, use it as the base URL as well
+    if (origin) {
+      this.baseURL = origin.replace(/\/$/, "");
+      this.origin = origin.replace(/\/$/, "");
+    } else {
+      // Use environment-based configuration
+      if (!baseURL) {
+        // Check for environment variable first (server-side)
+        if (typeof process !== "undefined" && process.env?.CUTTY_API_BASE_URL) {
+          baseURL = process.env.CUTTY_API_BASE_URL;
+        } else if (typeof window !== "undefined") {
+          // Client-side: determine based on hostname
+          const hostname = window.location.hostname;
+          if (hostname === "localhost") {
+            baseURL = "http://localhost:8787";
+          } else {
+            // Always use production API due to CSP restrictions
+            // Each Cutty deployment has its own CSP that only allows its own domain
+            baseURL = "https://cutty.emilycogsdill.com";
+          }
         } else {
+          // Server-side default - use production API
           baseURL = "https://cutty.emilycogsdill.com";
         }
-      } else {
-        // Server-side default - use dev URL for now since that's what we need to fix
-        baseURL = "https://cutty-dev.emilycogsdill.com";
       }
+      // Remove trailing slash if present
+      this.baseURL = baseURL.replace(/\/$/, "");
+      this.origin = this.baseURL;
     }
-    // Remove trailing slash if present
-    this.baseURL = baseURL.replace(/\/$/, "");
   }
 
   /**
@@ -71,7 +78,7 @@ export class CuttyAPIClient {
       async () => {
         try {
           const response = await fetchWithTimeout(
-            `${this.baseURL}/api/v1/synthetic-data/generate`,
+            `${this.origin}/api/v1/synthetic-data/generate`,
             {
               body: JSON.stringify({
                 count: params.count,
@@ -143,7 +150,7 @@ export class CuttyAPIClient {
       async () => {
         try {
           const response = await fetchWithTimeout(
-            `${this.baseURL}/api/v1/synthetic-data/supported-states`,
+            `${this.origin}/api/v1/synthetic-data/supported-states`,
             { timeout: 10000 } // 10 second timeout
           );
 
@@ -181,9 +188,17 @@ export class CuttyAPIClient {
    */
   getDownloadUrl(fileId: string, isAnonymous: boolean = true): string {
     if (isAnonymous) {
-      return `/api/v1/synthetic-data/download/${fileId}`;
+      return `${this.origin}/api/v1/synthetic-data/download/${fileId}`;
     }
-    return `/api/v1/files/${fileId}`;
+    return `${this.origin}/api/v1/files/${fileId}`;
+  }
+
+  /**
+   * Update the origin for this client instance
+   */
+  setOrigin(origin: string): void {
+    this.origin = origin.replace(/\/$/, "");
+    this.baseURL = origin.replace(/\/$/, "");
   }
 
   /**
@@ -199,9 +214,9 @@ export class CuttyAPIClient {
         if (downloadUrl.startsWith("http")) {
           a.href = downloadUrl;
         } else if (downloadUrl.startsWith("/")) {
-          a.href = `${this.baseURL}${downloadUrl}`;
+          a.href = `${this.origin}${downloadUrl}`;
         } else {
-          a.href = `${this.baseURL}/${downloadUrl}`;
+          a.href = `${this.origin}/${downloadUrl}`;
         }
         a.download = filename || "synthetic-data.csv";
         document.body.appendChild(a);
@@ -214,7 +229,7 @@ export class CuttyAPIClient {
       const response = await fetch(
         downloadUrl.startsWith("http")
           ? downloadUrl
-          : `${this.baseURL}${downloadUrl}`,
+          : `${this.origin}${downloadUrl}`,
         {
           credentials: "include",
           method: "GET",

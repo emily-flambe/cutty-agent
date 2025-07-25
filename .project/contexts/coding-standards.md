@@ -84,11 +84,24 @@ src/
 - Keep README up-to-date with setup changes
 - Document all API endpoints in api-agreements.md
 
+## Code Style Standards
+
+- All code MUST adhere to Prettier formatting rules
+- All code MUST pass Biome linting rules
+- TypeScript code MUST compile without errors
+- Code that fails `npm run check` will not be accepted
+
 ## Git Commit Standards
 
 - Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`
 - Keep commits atomic and focused
 - Write clear commit messages explaining 'why'
+
+### Best Practices
+
+- Run `npm run check` before every commit
+- Fix all formatting, linting, and type errors before pushing
+- Use `npx prettier --write` to auto-fix formatting issues
 
 ## Security Standards
 
