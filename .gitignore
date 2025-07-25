@@ -143,3 +143,6 @@ dist
 .dev.vars
 local.sqlite*
 
+# Test files
+test-websocket.js
+

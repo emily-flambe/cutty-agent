@@ -22,15 +22,18 @@ Currently no authentication required. API key validation is handled server-side 
 **Protocol**: WebSocket (ws://) or Secure WebSocket (wss://)
 
 **URL Parameters**:
+
 - `sessionId` (required): Unique session identifier (e.g., `session-1753321096402-i1x6y789r`)
 
 **Connection Example**:
+
 ```javascript
-const ws = new WebSocket('ws://localhost:8789/agents/chat/session-123-abc');
+const ws = new WebSocket("ws://localhost:8789/agents/chat/session-123-abc");
 ```
 
-**Message Format**: 
+**Message Format**:
 The Cloudflare Agents SDK handles message serialization. Messages are sent as JSON-encoded data streams with automatic handling of:
+
 - Text responses
 - Tool invocations
 - Tool results
@@ -43,6 +46,7 @@ The Cloudflare Agents SDK handles message serialization. Messages are sent as JS
 **Purpose**: Retrieve chat message history for a specific session
 
 **URL Parameters**:
+
 - `sessionId` (required): The session identifier
 
 **Response**: JSON array of messages for the session
@@ -56,7 +60,7 @@ The Cloudflare Agents SDK handles message serialization. Messages are sent as JS
     "createdAt": "2025-01-24T10:00:00Z"
   },
   {
-    "id": "msg-124", 
+    "id": "msg-124",
     "role": "assistant",
     "content": "Hello! I'm Cutty the Cuttlefish...",
     "createdAt": "2025-01-24T10:00:01Z"
@@ -72,7 +76,7 @@ The Cloudflare Agents SDK handles message serialization. Messages are sent as JS
 
 ```json
 {
-  "success": true  // or false if not configured
+  "success": true // or false if not configured
 }
 ```
 
@@ -100,6 +104,7 @@ The agent has access to the following tools that can be invoked during conversat
 ```
 
 **Example Response**:
+
 ```json
 {
   "success": true,
@@ -134,25 +139,29 @@ The agent has access to the following tools that can be invoked during conversat
 ```
 
 **Supported Features**:
+
 - "list generation"
-- "data export" 
+- "data export"
 - "team collaboration"
 - "api access"
 
 ## Session Management
 
 ### Session ID Format
+
 - Pattern: `session-{timestamp}-{random}`
 - Example: `session-1753321096402-i1x6y789r`
 - Storage: Client should use `sessionStorage` or similar for tab-specific sessions
 
 ### Session Lifecycle
+
 1. Client generates session ID on first load
 2. Session ID is included in all API calls via URL path
 3. Each session maintains independent conversation history
 4. Sessions persist in Durable Objects until explicitly cleared
 
 ### Best Practices
+
 - Generate session ID once per tab/window
 - Store in `sessionStorage` for tab isolation
 - Include session ID in all agent API calls
@@ -165,11 +174,11 @@ The agent has access to the following tools that can be invoked during conversat
 ```typescript
 // Generate session ID
 const generateSessionId = () => {
-  const existing = sessionStorage.getItem('cutty-session-id');
+  const existing = sessionStorage.getItem("cutty-session-id");
   if (existing) return existing;
-  
+
   const id = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  sessionStorage.setItem('cutty-session-id', id);
+  sessionStorage.setItem("cutty-session-id", id);
   return id;
 };
 
@@ -184,10 +193,12 @@ ws.onmessage = (event) => {
 };
 
 // Send message
-ws.send(JSON.stringify({
-  message: "What states do you support?",
-  // Additional metadata as needed
-}));
+ws.send(
+  JSON.stringify({
+    message: "What states do you support?",
+    // Additional metadata as needed
+  })
+);
 ```
 
 ## Error Handling
@@ -208,6 +219,7 @@ ANTHROPIC_API_KEY=your-api-key-here
 ```
 
 Optional configuration:
+
 - `ENABLE_TOOLS`: Enable/disable tool usage
 - `DEBUG_MODE`: Enable debug logging
 - `ALLOWED_ORIGINS`: CORS allowed origins (if implemented)
