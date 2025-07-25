@@ -31,6 +31,9 @@ export function ToolInvocationCard({
 }: ToolInvocationCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
+  // Handle automatic download when download URL is present in result
+  // Removed automatic download - using clickable links in chat instead
+
   return (
     <Card
       className={`p-4 my-3 w-full max-w-[500px] rounded-md bg-neutral-100 dark:bg-neutral-900 ${

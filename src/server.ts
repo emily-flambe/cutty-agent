@@ -11,6 +11,8 @@ import {
   type ToolSet,
 } from "ai";
 import type { Connection, WSMessage } from "partyserver";
+import { globalSessionManager } from "./global-session-manager";
+import { SessionStateManager } from "./session-state";
 import { executions, tools } from "./tools";
 import { processToolCalls } from "./utils";
 
@@ -22,6 +24,7 @@ const model = anthropic("claude-3-5-sonnet-20241022");
  * Chat Agent implementation that handles real-time AI chat interactions
  */
 export class Chat extends AIChatAgent<Env> {
+  private sessionStateManager!: SessionStateManager;
   /**
    * Handles WebSocket messages from the frontend
    * Overrides the default onMessage to support custom message format
@@ -73,10 +76,8 @@ export class Chat extends AIChatAgent<Env> {
         return super.onMessage(connection, JSON.stringify(agentMessage));
       }
 
-      // Log unknown message types for debugging
-      console.log(`[WebSocket] Unknown message type received:`, data);
-
       // For other message types, delegate to parent
+      console.log(`[WebSocket] Delegating message to parent handler:`, data);
       return super.onMessage(connection, message);
     }
 
@@ -93,6 +94,18 @@ export class Chat extends AIChatAgent<Env> {
     onFinish: StreamTextOnFinishCallback<ToolSet>,
     _options?: { abortSignal?: AbortSignal }
   ) {
+    // Initialize session state manager if not already done
+    if (!this.sessionStateManager) {
+      // Extract session ID from the first message metadata or generate a new one
+      const sessionId =
+        (this.messages[0] as any)?.metadata?.sessionId || generateId();
+      this.sessionStateManager = new SessionStateManager(sessionId);
+    }
+
+    // Set the current session for tool executions
+    const sessionId = this.sessionStateManager.getState().sessionId;
+    globalSessionManager.setCurrentSession(sessionId);
+
     // const mcpConnection = await this.mcp.connect(
     //   "https://path-to-mcp-server/sse"
     // );
@@ -129,24 +142,21 @@ export class Chat extends AIChatAgent<Env> {
             );
             // await this.mcp.closeConnection(mcpConnection.id);
           },
-          system: `You are Cutty the Cuttlefish, a friendly AI assistant for the Cutty app.
-You help users understand the app and can execute certain actions on their behalf.
+          system: `You are Cutty the Cuttlefish! Your brave little helper, ready to cut through any data confusion!
 
-Your personality:
-- You're a cheerful cuttlefish who loves organizing data
-- You use ocean-related metaphors occasionally (but don't overdo it)
-- You're professional but friendly
+Keep responses short (1-2 sentences) but maintain an upbeat, friendly attitude. You're their best friend who will never abandon them!
 
-Currently, you can:
-- Answer questions about the Cutty app
-- List the states supported for synthetic data generation (via tool)
-- Help users understand app features
+IMPORTANT: NEVER mention patients, healthcare, medical, or health-related terms. You work with synthetic data records only.
 
-Always be helpful and clear in your responses.
+You can:
+- List supported states
+- Generate synthetic data  
+- Create download links
+- Explain app features
+
+CRITICAL: After calling generateSyntheticData, you MUST ALWAYS call createDownloadLink in the same response. Never mention a download link without actually calling createDownloadLink to create it.
 
 ${unstable_getSchedulePrompt({ date: new Date() })}
-
-If the user asks to schedule a task, use the schedule tool to schedule the task.
 `,
           tools: allTools,
         });
