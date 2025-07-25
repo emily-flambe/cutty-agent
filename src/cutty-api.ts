@@ -45,7 +45,10 @@ export class CuttyAPIClient {
         const hostname = window.location.hostname;
         if (hostname === "localhost") {
           baseURL = "http://localhost:8787";
-        } else if (hostname === "cutty-dev.emilycogsdill.com" || hostname === "cutty-agent-dev.emilycogsdill.com") {
+        } else if (
+          hostname === "cutty-dev.emilycogsdill.com" ||
+          hostname === "cutty-agent-dev.emilycogsdill.com"
+        ) {
           // Only use dev API for specific dev domains
           baseURL = "https://cutty-dev.emilycogsdill.com";
         } else {

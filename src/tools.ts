@@ -54,7 +54,8 @@ export const explainFeature = tool({
 
 // Tool for generating synthetic data with automatic execution
 export const generateSyntheticData = tool({
-  description: "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
+  description:
+    "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
   execute: async ({ count, states }: { count: number; states?: string[] }) => {
     try {
       // Call the Cutty API to generate synthetic data
@@ -96,15 +97,15 @@ export const generateSyntheticData = tool({
 
       // Include download link in the message for the AI to see
       // Need to construct full URL for markdown links to work properly
-      const fullDownloadUrl = response.file?.downloadUrl 
-        ? (response.file.downloadUrl.startsWith('http') 
-            ? response.file.downloadUrl 
-            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
-        : '';
+      const fullDownloadUrl = response.file?.downloadUrl
+        ? response.file.downloadUrl.startsWith("http")
+          ? response.file.downloadUrl
+          : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`
+        : "";
       const downloadLink = fullDownloadUrl
         ? `\n\n[Download Your Data](${fullDownloadUrl})`
-        : '';
-      
+        : "";
+
       return {
         downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
@@ -375,15 +376,15 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
 
       // Include download link in the message for the AI to see
       // Need to construct full URL for markdown links to work properly
-      const fullDownloadUrl = response.file?.downloadUrl 
-        ? (response.file.downloadUrl.startsWith('http') 
-            ? response.file.downloadUrl 
-            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
-        : '';
+      const fullDownloadUrl = response.file?.downloadUrl
+        ? response.file.downloadUrl.startsWith("http")
+          ? response.file.downloadUrl
+          : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`
+        : "";
       const downloadLink = fullDownloadUrl
         ? `\n\n[Download Your Data](${fullDownloadUrl})`
-        : '';
-      
+        : "";
+
       return {
         downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
