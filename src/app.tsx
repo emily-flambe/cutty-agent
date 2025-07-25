@@ -27,8 +27,8 @@ import type { tools } from "./tools";
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
   // All tools now execute automatically without confirmation
   // "explainFeature",
-  // "generateSyntheticData",
-  // "downloadGeneratedData"
+  "generateSyntheticData",
+  // "createDownloadLink", // Now just returns a clickable link
 ];
 
 export default function Chat() {

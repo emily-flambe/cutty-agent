@@ -1,21 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { cuttyAPI } from "./cutty-api";
-
-// Type for storing generated file info
-interface GeneratedFileInfo {
-  fileId?: string;
-  downloadUrl?: string;
-  filename?: string;
-  generatedAt?: string;
-}
-
-// Extend window interface for our custom property
-declare global {
-  interface Window {
-    __lastGeneratedFile?: GeneratedFileInfo;
-  }
-}
+import { globalSessionManager } from "./global-session-manager";
+import type { GeneratedFileInfo } from "./session-state";
 
 // Single read-only tool for PoC
 export const getSupportedStates = tool({
@@ -40,18 +27,17 @@ export const explainFeature = tool({
   execute: async ({ feature }: { feature: string }) => {
     const featureExplanations: Record<string, string> = {
       "api access":
-        "The API Access feature provides programmatic access to all list generation capabilities, allowing you to integrate synthetic data generation into your automated testing workflows.",
-      "data export":
-        "The Data Export feature lets you download your generated lists in multiple formats including CSV, JSON, and Excel. You can customize which fields to include and apply filters before exporting.",
+        "API Access provides programmatic access to all data generation capabilities.",
+      "data export": "Export data in CSV, JSON, or Excel formats.",
       "list generation":
-        "The List Generation feature allows you to create synthetic patient lists using realistic demographic data. You can specify the state, number of patients, and various demographic parameters to generate lists that match your testing needs.",
+        "Generate synthetic data with customizable parameters.",
       "team collaboration":
-        "Team Collaboration features allow multiple users to work on the same lists, share generated data, and maintain consistent test datasets across your organization.",
+        "Share generated data and collaborate with team members.",
     };
 
     const explanation =
       featureExplanations[feature.toLowerCase()] ||
-      `The ${feature} feature is an important part of the Cutty app that helps you work more efficiently with synthetic healthcare data.`;
+      `${feature} helps you work with synthetic data.`;
 
     return {
       explanation,
@@ -68,7 +54,7 @@ export const explainFeature = tool({
 
 // Tool for generating synthetic data with automatic execution
 export const generateSyntheticData = tool({
-  description: "Generate synthetic patient data for testing purposes",
+  description: "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
   execute: async ({ count, states }: { count: number; states?: string[] }) => {
     try {
       // Call the Cutty API to generate synthetic data
@@ -82,15 +68,23 @@ export const generateSyntheticData = tool({
         };
       }
 
-      // Store the file info in a global variable for the download tool
-      // In a real implementation, this would be stored in session state
-      if (typeof window !== "undefined") {
-        window.__lastGeneratedFile = {
-          downloadUrl: response.file?.downloadUrl,
-          fileId: response.file?.id,
-          filename: response.file?.name,
-          generatedAt: response.metadata?.generatedAt,
-        };
+      // Store the file info in session state
+      if (response.file) {
+        globalSessionManager.storeGeneratedFile({
+          downloadUrl: response.file.downloadUrl,
+          fileId: response.file.id,
+          filename: response.file.name,
+          generatedAt:
+            response.metadata?.generatedAt || new Date().toISOString(),
+          metadata: {
+            recordCount: response.metadata?.recordCount,
+            states:
+              response.metadata?.states ||
+              (response.metadata?.state
+                ? [response.metadata.state]
+                : undefined),
+          },
+        });
       }
 
       // Prepare a user-friendly response
@@ -100,16 +94,26 @@ export const generateSyntheticData = tool({
           ? ` for ${response.metadata.state}`
           : "";
 
+      // Include download link in the message for the AI to see
+      // Need to construct full URL for markdown links to work properly
+      const fullDownloadUrl = response.file?.downloadUrl 
+        ? (response.file.downloadUrl.startsWith('http') 
+            ? response.file.downloadUrl 
+            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
+        : '';
+      const downloadLink = fullDownloadUrl
+        ? `\n\n[Download Your Data](${fullDownloadUrl})`
+        : '';
+      
       return {
-        downloadInstructions:
-          "You can now use the 'downloadGeneratedData' tool to download your file.",
+        downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
           downloadUrl: response.file?.downloadUrl,
           id: response.file?.id,
           name: response.file?.name,
           size: response.file?.size,
         },
-        message: `Successfully generated ${response.metadata?.recordCount} synthetic patient records${stateInfo}.`,
+        message: `Successfully generated ${response.metadata?.recordCount} records${stateInfo}!${downloadLink}`,
         metadata: response.metadata,
         success: true,
       };
@@ -137,9 +141,10 @@ export const generateSyntheticData = tool({
   }),
 });
 
-// Tool for downloading generated data with automatic execution
-export const downloadGeneratedData = tool({
-  description: "Download the most recently generated synthetic data file",
+// Tool for creating download links for generated data
+export const createDownloadLink = tool({
+  description:
+    "Create a download link for the most recently generated synthetic data file",
   execute: async ({ fileId }: { fileId?: string }) => {
     try {
       let downloadInfo: GeneratedFileInfo & {
@@ -153,42 +158,41 @@ export const downloadGeneratedData = tool({
           downloadUrl: cuttyAPI.getDownloadUrl(fileId),
           fileId,
           filename: `synthetic-data-${fileId}.csv`,
-        };
-      } else if (typeof window !== "undefined" && window.__lastGeneratedFile) {
-        // Use the last generated file
-        downloadInfo = window.__lastGeneratedFile as GeneratedFileInfo & {
-          downloadUrl: string;
-          filename: string;
+          generatedAt: new Date().toISOString(),
         };
       } else {
-        return {
-          error: "No file to download",
-          message:
-            "No recently generated files found. Please generate synthetic data first using the 'generateSyntheticData' tool.",
-          success: false,
-        };
+        // Use the last generated file from session state
+        const lastFile = globalSessionManager.getLastGeneratedFile();
+        if (lastFile?.downloadUrl && lastFile.filename) {
+          downloadInfo = {
+            downloadUrl: lastFile.downloadUrl,
+            fileId: lastFile.fileId,
+            filename: lastFile.filename,
+            generatedAt: lastFile.generatedAt || new Date().toISOString(),
+            metadata: lastFile.metadata,
+          };
+        } else {
+          return {
+            error: "No file to download",
+            message:
+              "No recently generated files found. Please generate synthetic data first using the 'generateSyntheticData' tool.",
+            success: false,
+          };
+        }
       }
 
-      // Trigger the download
-      const downloadSuccess = await cuttyAPI.downloadFile(
-        downloadInfo.downloadUrl,
-        downloadInfo.filename
-      );
+      // Return a message with a clickable download link
+      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
 
-      if (downloadSuccess) {
-        return {
-          fileId: downloadInfo.fileId,
-          message: `Download started for file: ${downloadInfo.filename}`,
-          success: true,
-        };
-      } else {
-        return {
-          error: "Download failed",
-          message:
-            "Failed to download the file. Please try again or generate a new file.",
-          success: false,
-        };
-      }
+The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
+
+      return {
+        downloadUrl: downloadInfo.downloadUrl,
+        fileId: downloadInfo.fileId,
+        filename: downloadInfo.filename,
+        message: downloadMessage,
+        success: true,
+      };
     } catch (error) {
       console.error("Error downloading file:", error);
       return {
@@ -229,7 +233,7 @@ export const getSyntheticDataStatus = tool({
  * These will be provided to the AI model to describe available capabilities
  */
 export const tools = {
-  downloadGeneratedData,
+  createDownloadLink,
   explainFeature,
   generateSyntheticData,
   getSupportedStates,
@@ -243,7 +247,7 @@ export const tools = {
  * NOTE: keys below should match toolsRequiringConfirmation in app.tsx
  */
 export const executions = {
-  downloadGeneratedData: async (args: unknown, _context?: any) => {
+  createDownloadLink: async (args: unknown, _context?: any) => {
     const { fileId } = args as { fileId?: string };
     try {
       let downloadInfo: GeneratedFileInfo & {
@@ -257,42 +261,41 @@ export const executions = {
           downloadUrl: cuttyAPI.getDownloadUrl(fileId),
           fileId,
           filename: `synthetic-data-${fileId}.csv`,
-        };
-      } else if (typeof window !== "undefined" && window.__lastGeneratedFile) {
-        // Use the last generated file
-        downloadInfo = window.__lastGeneratedFile as GeneratedFileInfo & {
-          downloadUrl: string;
-          filename: string;
+          generatedAt: new Date().toISOString(),
         };
       } else {
-        return {
-          error: "No file to download",
-          message:
-            "No recently generated files found. Please generate synthetic data first using the 'generateSyntheticData' tool.",
-          success: false,
-        };
+        // Use the last generated file from session state
+        const lastFile = globalSessionManager.getLastGeneratedFile();
+        if (lastFile?.downloadUrl && lastFile.filename) {
+          downloadInfo = {
+            downloadUrl: lastFile.downloadUrl,
+            fileId: lastFile.fileId,
+            filename: lastFile.filename,
+            generatedAt: lastFile.generatedAt || new Date().toISOString(),
+            metadata: lastFile.metadata,
+          };
+        } else {
+          return {
+            error: "No file to download",
+            message:
+              "No recently generated files found. Please generate synthetic data first using the 'generateSyntheticData' tool.",
+            success: false,
+          };
+        }
       }
 
-      // Trigger the download
-      const downloadSuccess = await cuttyAPI.downloadFile(
-        downloadInfo.downloadUrl,
-        downloadInfo.filename
-      );
+      // Return a message with a clickable download link
+      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
 
-      if (downloadSuccess) {
-        return {
-          fileId: downloadInfo.fileId,
-          message: `Download started for file: ${downloadInfo.filename}`,
-          success: true,
-        };
-      } else {
-        return {
-          error: "Download failed",
-          message:
-            "Failed to download the file. Please try again or generate a new file.",
-          success: false,
-        };
-      }
+The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
+
+      return {
+        downloadUrl: downloadInfo.downloadUrl,
+        fileId: downloadInfo.fileId,
+        filename: downloadInfo.filename,
+        message: downloadMessage,
+        success: true,
+      };
     } catch (error) {
       console.error("Error downloading file:", error);
       return {
@@ -306,18 +309,17 @@ export const executions = {
     const { feature } = args as { feature: string };
     const featureExplanations: Record<string, string> = {
       "api access":
-        "The API Access feature provides programmatic access to all list generation capabilities, allowing you to integrate synthetic data generation into your automated testing workflows.",
-      "data export":
-        "The Data Export feature lets you download your generated lists in multiple formats including CSV, JSON, and Excel. You can customize which fields to include and apply filters before exporting.",
+        "API Access provides programmatic access to all data generation capabilities.",
+      "data export": "Export data in CSV, JSON, or Excel formats.",
       "list generation":
-        "The List Generation feature allows you to create synthetic patient lists using realistic demographic data. You can specify the state, number of patients, and various demographic parameters to generate lists that match your testing needs.",
+        "Generate synthetic data with customizable parameters.",
       "team collaboration":
-        "Team Collaboration features allow multiple users to work on the same lists, share generated data, and maintain consistent test datasets across your organization.",
+        "Share generated data and collaborate with team members.",
     };
 
     const explanation =
       featureExplanations[feature.toLowerCase()] ||
-      `The ${feature} feature is an important part of the Cutty app that helps you work more efficiently with synthetic healthcare data.`;
+      `${feature} helps you work with synthetic data.`;
 
     return {
       explanation,
@@ -345,15 +347,23 @@ export const executions = {
         };
       }
 
-      // Store the file info in a global variable for the download tool
-      // In a real implementation, this would be stored in session state
-      if (typeof window !== "undefined") {
-        window.__lastGeneratedFile = {
-          downloadUrl: response.file?.downloadUrl,
-          fileId: response.file?.id,
-          filename: response.file?.name,
-          generatedAt: response.metadata?.generatedAt,
-        };
+      // Store the file info in session state
+      if (response.file) {
+        globalSessionManager.storeGeneratedFile({
+          downloadUrl: response.file.downloadUrl,
+          fileId: response.file.id,
+          filename: response.file.name,
+          generatedAt:
+            response.metadata?.generatedAt || new Date().toISOString(),
+          metadata: {
+            recordCount: response.metadata?.recordCount,
+            states:
+              response.metadata?.states ||
+              (response.metadata?.state
+                ? [response.metadata.state]
+                : undefined),
+          },
+        });
       }
 
       // Prepare a user-friendly response
@@ -363,16 +373,26 @@ export const executions = {
           ? ` for ${response.metadata.state}`
           : "";
 
+      // Include download link in the message for the AI to see
+      // Need to construct full URL for markdown links to work properly
+      const fullDownloadUrl = response.file?.downloadUrl 
+        ? (response.file.downloadUrl.startsWith('http') 
+            ? response.file.downloadUrl 
+            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
+        : '';
+      const downloadLink = fullDownloadUrl
+        ? `\n\n[Download Your Data](${fullDownloadUrl})`
+        : '';
+      
       return {
-        downloadInstructions:
-          "You can now use the 'downloadGeneratedData' tool to download your file.",
+        downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
           downloadUrl: response.file?.downloadUrl,
           id: response.file?.id,
           name: response.file?.name,
           size: response.file?.size,
         },
-        message: `Successfully generated ${response.metadata?.recordCount} synthetic patient records${stateInfo}.`,
+        message: `Successfully generated ${response.metadata?.recordCount} records${stateInfo}!${downloadLink}`,
         metadata: response.metadata,
         success: true,
       };

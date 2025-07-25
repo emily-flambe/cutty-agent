@@ -23,7 +23,7 @@ Cutty Agent is a proof-of-concept AI assistant built on Cloudflare's Agents SDK,
    - `getSupportedStates`: Returns list of US states for data generation
    - `explainFeature`: Explains Cutty app features (requires confirmation)
    - `generateSyntheticData`: Generates synthetic patient data (requires confirmation)
-   - `downloadGeneratedData`: Downloads generated data files (requires confirmation)
+   - `createDownloadLink`: Creates download links for generated data files
    - `getSyntheticDataStatus`: Checks generation status
 
 ## WebSocket Communication Protocol
