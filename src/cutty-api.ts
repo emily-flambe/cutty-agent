@@ -45,19 +45,13 @@ export class CuttyAPIClient {
         const hostname = window.location.hostname;
         if (hostname === "localhost") {
           baseURL = "http://localhost:8787";
-        } else if (
-          hostname === "cutty-dev.emilycogsdill.com" ||
-          hostname === "cutty-agent-dev.emilycogsdill.com"
-        ) {
-          // Only use dev API for specific dev domains
-          baseURL = "https://cutty-dev.emilycogsdill.com";
         } else {
-          // Production domains (cutty.emilycogsdill.com, cutty-agent.emilycogsdill.com)
+          // All production domains use production API
           baseURL = "https://cutty.emilycogsdill.com";
         }
       } else {
-        // Server-side default - use dev URL for now since that's what we need to fix
-        baseURL = "https://cutty-dev.emilycogsdill.com";
+        // Server-side default - use production API
+        baseURL = "https://cutty.emilycogsdill.com";
       }
     }
     // Remove trailing slash if present
