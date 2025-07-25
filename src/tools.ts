@@ -102,7 +102,7 @@ export const generateSyntheticData = tool({
             : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
         : '';
       const downloadLink = fullDownloadUrl
-        ? `\n\n[Download ${response.file?.name || 'File'}](${fullDownloadUrl})`
+        ? `\n\n[Download Your Data](${fullDownloadUrl})`
         : '';
       
       return {
@@ -182,7 +182,7 @@ export const createDownloadLink = tool({
       }
 
       // Return a message with a clickable download link
-      const downloadMessage = `Your file is ready! Click here to download: [${downloadInfo.filename}](${downloadInfo.downloadUrl})
+      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
 
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
@@ -285,7 +285,7 @@ export const executions = {
       }
 
       // Return a message with a clickable download link
-      const downloadMessage = `Your file is ready! Click here to download: [${downloadInfo.filename}](${downloadInfo.downloadUrl})
+      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
 
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
@@ -381,7 +381,7 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
             : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
         : '';
       const downloadLink = fullDownloadUrl
-        ? `\n\n[Download ${response.file?.name || 'File'}](${fullDownloadUrl})`
+        ? `\n\n[Download Your Data](${fullDownloadUrl})`
         : '';
       
       return {
