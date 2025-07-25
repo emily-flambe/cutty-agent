@@ -61,6 +61,7 @@ export const generateSyntheticData = tool({
       // Get the origin from the current session
       const sessionState = globalSessionManager.getCurrentSessionState();
       const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
 
       // Create a CuttyAPIClient instance with the correct origin
       const apiClient = new CuttyAPIClient(undefined, origin);
@@ -111,7 +112,7 @@ export const generateSyntheticData = tool({
         ? apiClient.getDownloadUrl(response.file.id)
         : "";
       const downloadLink = fullDownloadUrl
-        ? `\n\n[Download Your Data](${fullDownloadUrl})`
+        ? `\n\n[${response.file?.name || 'Download Your Data'}](${fullDownloadUrl})`
         : "";
 
       return {
@@ -159,6 +160,7 @@ export const createDownloadLink = tool({
       // Get the origin from the current session
       const sessionState = globalSessionManager.getCurrentSessionState();
       const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
 
       // Create a CuttyAPIClient instance with the correct origin
       const apiClient = new CuttyAPIClient(undefined, origin);
@@ -198,7 +200,7 @@ export const createDownloadLink = tool({
       }
 
       // Return a message with a clickable download link
-      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
+      const downloadMessage = `Your file is ready! Click here to download: [${downloadInfo.filename}](${downloadInfo.downloadUrl})
 
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
@@ -269,6 +271,7 @@ export const executions = {
       // Get the origin from the current session
       const sessionState = globalSessionManager.getCurrentSessionState();
       const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
 
       // Create a CuttyAPIClient instance with the correct origin
       const apiClient = new CuttyAPIClient(undefined, origin);
@@ -308,7 +311,7 @@ export const executions = {
       }
 
       // Return a message with a clickable download link
-      const downloadMessage = `Your file is ready! Click here to download: [Download Your Data](${downloadInfo.downloadUrl})
+      const downloadMessage = `Your file is ready! Click here to download: [${downloadInfo.filename}](${downloadInfo.downloadUrl})
 
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
@@ -362,6 +365,7 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
       // Get the origin from the current session
       const sessionState = globalSessionManager.getCurrentSessionState();
       const origin = sessionState?.origin || "https://cutty.emilycogsdill.com";
+      console.log('[TOOLS] Using origin:', origin, 'from session state:', sessionState?.origin);
 
       // Create a CuttyAPIClient instance with the correct origin
       const apiClient = new CuttyAPIClient(undefined, origin);
@@ -412,7 +416,7 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
         ? apiClient.getDownloadUrl(response.file.id)
         : "";
       const downloadLink = fullDownloadUrl
-        ? `\n\n[Download Your Data](${fullDownloadUrl})`
+        ? `\n\n[${response.file?.name || 'Download Your Data'}](${fullDownloadUrl})`
         : "";
 
       return {

@@ -98,6 +98,8 @@ export class Chat extends AIChatAgent<Env> {
             console.log(
               `[WebSocket] Origin updated from message metadata: ${this.origin}`
             );
+            // Update session state immediately
+            this.sessionStateManager.setOrigin(this.origin);
           }
         }
 
@@ -215,7 +217,7 @@ You can:
 - Create download links
 - Explain app features
 
-CRITICAL: When you call generateSyntheticData, ALWAYS share the download link that is included in the response. The download link will be in the format "[Download File](url)" - you MUST include this link in your response to the user.
+CRITICAL: When you call generateSyntheticData, ALWAYS share the download link EXACTLY as it appears in the response, including the filename. The link will be in the format "[filename.csv](url)" - you MUST include this exact link in your response to the user without modifying the link text.
 
 ${unstable_getSchedulePrompt({ date: new Date() })}
 `,
