@@ -83,9 +83,17 @@ export class Chat extends AIChatAgent<Env> {
           `[WebSocket] Received message from frontend: ${data.message}`
         );
         console.log(`[WebSocket] Context:`, data.context);
+        console.log(`[WebSocket] Metadata:`, data.metadata);
 
-        // Check for origin in message metadata as fallback
-        if (data.context?.origin) {
+        // Check for origin in context, top-level metadata, or first message metadata
+        let messageOrigin = data.context?.origin || data.metadata?.origin;
+        
+        // If not found at top level, check in the first message's metadata
+        if (!messageOrigin && data.messages && data.messages.length > 0) {
+          messageOrigin = data.messages[0].metadata?.origin;
+        }
+        
+        if (messageOrigin) {
           const allowedOrigins = [
             "https://cutty.emilycogsdill.com",
             "https://cutty-dev.emilycogsdill.com",
@@ -93,13 +101,17 @@ export class Chat extends AIChatAgent<Env> {
             "http://localhost:3000",
           ];
 
-          if (allowedOrigins.includes(data.context.origin)) {
-            this.origin = data.context.origin;
+          if (allowedOrigins.includes(messageOrigin)) {
+            this.origin = messageOrigin;
             console.log(
-              `[WebSocket] Origin updated from message metadata: ${this.origin}`
+              `[WebSocket] Origin updated from message: ${this.origin}`
             );
             // Update session state immediately
             this.sessionStateManager.setOrigin(this.origin);
+          } else {
+            console.log(
+              `[WebSocket] Ignoring untrusted origin: ${messageOrigin}`
+            );
           }
         }
 
