@@ -54,7 +54,7 @@ export const explainFeature = tool({
 
 // Tool for generating synthetic data with automatic execution
 export const generateSyntheticData = tool({
-  description: "Generate synthetic patient data for testing purposes",
+  description: "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
   execute: async ({ count, states }: { count: number; states?: string[] }) => {
     try {
       // Call the Cutty API to generate synthetic data
@@ -71,7 +71,7 @@ export const generateSyntheticData = tool({
       // Store the file info in session state
       if (response.file) {
         globalSessionManager.storeGeneratedFile({
-          downloadUrl: cuttyAPI.getDownloadUrl(response.file.id),
+          downloadUrl: response.file.downloadUrl,
           fileId: response.file.id,
           filename: response.file.name,
           generatedAt:
@@ -94,14 +94,26 @@ export const generateSyntheticData = tool({
           ? ` for ${response.metadata.state}`
           : "";
 
+      // Include download link in the message for the AI to see
+      // Need to construct full URL for markdown links to work properly
+      const fullDownloadUrl = response.file?.downloadUrl 
+        ? (response.file.downloadUrl.startsWith('http') 
+            ? response.file.downloadUrl 
+            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
+        : '';
+      const downloadLink = fullDownloadUrl
+        ? `\n\n[Download ${response.file?.name || 'File'}](${fullDownloadUrl})`
+        : '';
+      
       return {
-        message: `Generated ${response.metadata?.recordCount} records${stateInfo}.`,
+        downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
           downloadUrl: response.file?.downloadUrl,
           id: response.file?.id,
           name: response.file?.name,
           size: response.file?.size,
         },
+        message: `Successfully generated ${response.metadata?.recordCount} records${stateInfo}!${downloadLink}`,
         metadata: response.metadata,
         success: true,
       };
@@ -175,10 +187,10 @@ export const createDownloadLink = tool({
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
       return {
-        message: downloadMessage,
         downloadUrl: downloadInfo.downloadUrl,
         fileId: downloadInfo.fileId,
         filename: downloadInfo.filename,
+        message: downloadMessage,
         success: true,
       };
     } catch (error) {
@@ -278,10 +290,10 @@ export const executions = {
 The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic patient records${downloadInfo.metadata?.states ? ` for ${downloadInfo.metadata.states.join(", ")}` : ""}.`;
 
       return {
-        message: downloadMessage,
         downloadUrl: downloadInfo.downloadUrl,
         fileId: downloadInfo.fileId,
         filename: downloadInfo.filename,
+        message: downloadMessage,
         success: true,
       };
     } catch (error) {
@@ -338,7 +350,7 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
       // Store the file info in session state
       if (response.file) {
         globalSessionManager.storeGeneratedFile({
-          downloadUrl: cuttyAPI.getDownloadUrl(response.file.id),
+          downloadUrl: response.file.downloadUrl,
           fileId: response.file.id,
           filename: response.file.name,
           generatedAt:
@@ -361,14 +373,26 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
           ? ` for ${response.metadata.state}`
           : "";
 
+      // Include download link in the message for the AI to see
+      // Need to construct full URL for markdown links to work properly
+      const fullDownloadUrl = response.file?.downloadUrl 
+        ? (response.file.downloadUrl.startsWith('http') 
+            ? response.file.downloadUrl 
+            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
+        : '';
+      const downloadLink = fullDownloadUrl
+        ? `\n\n[Download ${response.file?.name || 'File'}](${fullDownloadUrl})`
+        : '';
+      
       return {
-        message: `Generated ${response.metadata?.recordCount} records${stateInfo}.`,
+        downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
           downloadUrl: response.file?.downloadUrl,
           id: response.file?.id,
           name: response.file?.name,
           size: response.file?.size,
         },
+        message: `Successfully generated ${response.metadata?.recordCount} records${stateInfo}!${downloadLink}`,
         metadata: response.metadata,
         success: true,
       };

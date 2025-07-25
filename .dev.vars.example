@@ -1,3 +1,5 @@
 ANTHROPIC_API_KEY=sk-ant-api03-example-key
 # Optional - Cloudflare AI Gateway https://developers.cloudflare.com/ai-gateway/
 # GATEWAY_BASE_URL=https://gateway.ai.cloudflare.com/v1/..
+# Optional - Cutty API base URL (defaults to https://cutty-dev.emilycogsdill.com for development)
+CUTTY_API_BASE_URL=https://cutty-dev.emilycogsdill.com

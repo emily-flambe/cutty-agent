@@ -37,8 +37,11 @@ export class CuttyAPIClient {
   constructor(baseURL?: string) {
     // Use environment-based configuration
     if (!baseURL) {
-      // Determine base URL based on current environment
-      if (typeof window !== "undefined") {
+      // Check for environment variable first (server-side)
+      if (typeof process !== "undefined" && process.env?.CUTTY_API_BASE_URL) {
+        baseURL = process.env.CUTTY_API_BASE_URL;
+      } else if (typeof window !== "undefined") {
+        // Client-side: determine based on hostname
         const hostname = window.location.hostname;
         if (hostname === "localhost") {
           baseURL = "http://localhost:8787";
@@ -49,8 +52,8 @@ export class CuttyAPIClient {
           baseURL = "https://cutty.emilycogsdill.com";
         }
       } else {
-        // Server-side default
-        baseURL = "https://cutty.emilycogsdill.com";
+        // Server-side default - use dev URL for now since that's what we need to fix
+        baseURL = "https://cutty-dev.emilycogsdill.com";
       }
     }
     // Remove trailing slash if present
@@ -166,13 +169,21 @@ export class CuttyAPIClient {
   }
 
   /**
+   * Get the base URL for this client instance
+   */
+  getBaseURL(): string {
+    return this.baseURL;
+  }
+
+  /**
    * Construct download URL for a file
+   * This should match the format returned by the backend API
    */
   getDownloadUrl(fileId: string, isAnonymous: boolean = true): string {
     if (isAnonymous) {
-      return `${this.baseURL}/api/v1/synthetic-data/download/${fileId}`;
+      return `/api/v1/synthetic-data/download/${fileId}`;
     }
-    return `${this.baseURL}/api/v1/files/${fileId}`;
+    return `/api/v1/files/${fileId}`;
   }
 
   /**
@@ -184,9 +195,14 @@ export class CuttyAPIClient {
       if (downloadUrl.includes("/synthetic-data/download/")) {
         // Create a temporary anchor element to trigger download
         const a = document.createElement("a");
-        a.href = downloadUrl.startsWith("http")
-          ? downloadUrl
-          : `${this.baseURL}${downloadUrl}`;
+        // Ensure proper URL construction for relative paths
+        if (downloadUrl.startsWith("http")) {
+          a.href = downloadUrl;
+        } else if (downloadUrl.startsWith("/")) {
+          a.href = `${this.baseURL}${downloadUrl}`;
+        } else {
+          a.href = `${this.baseURL}/${downloadUrl}`;
+        }
         a.download = filename || "synthetic-data.csv";
         document.body.appendChild(a);
         a.click();

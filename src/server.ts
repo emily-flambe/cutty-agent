@@ -154,7 +154,7 @@ You can:
 - Create download links
 - Explain app features
 
-CRITICAL: After calling generateSyntheticData, you MUST ALWAYS call createDownloadLink in the same response. Never mention a download link without actually calling createDownloadLink to create it.
+CRITICAL: When you call generateSyntheticData, ALWAYS share the download link that is included in the response. The download link will be in the format "[Download File](url)" - you MUST include this link in your response to the user.
 
 ${unstable_getSchedulePrompt({ date: new Date() })}
 `,
