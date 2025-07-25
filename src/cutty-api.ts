@@ -61,9 +61,12 @@ export class CuttyAPIClient {
       );
 
       if (!response.ok) {
-        const errorData = await response
+        const errorData = (await response
           .json()
-          .catch(() => ({ error: "Unknown error" }));
+          .catch(() => ({ error: "Unknown error" }))) as {
+          error?: string;
+          details?: string[];
+        };
         return {
           details: errorData.details,
           error: errorData.error || `HTTP error! status: ${response.status}`,
@@ -71,7 +74,7 @@ export class CuttyAPIClient {
         };
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as SyntheticDataResponse;
       return data;
     } catch (error) {
       console.error("Failed to generate synthetic data:", error);

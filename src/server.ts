@@ -28,7 +28,7 @@ export class Chat extends AIChatAgent<Env> {
    */
   async onMessage(connection: Connection, message: WSMessage): Promise<void> {
     if (typeof message === "string") {
-      let data: any;
+      let data: { message?: string; context?: any };
       try {
         data = JSON.parse(message);
       } catch (_error) {

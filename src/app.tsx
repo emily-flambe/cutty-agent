@@ -141,8 +141,6 @@ export default function Chat() {
 
   const agent = useAgent({
     agent: "chat",
-    // Override the default API path to include session ID
-    apiPath: `/agents/chat/${sessionId}`,
     name: sessionId,
   });
 

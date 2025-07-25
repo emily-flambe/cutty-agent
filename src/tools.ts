@@ -2,6 +2,21 @@ import { tool } from "ai";
 import { z } from "zod";
 import { cuttyAPI } from "./cutty-api";
 
+// Type for storing generated file info
+interface GeneratedFileInfo {
+  fileId?: string;
+  downloadUrl?: string;
+  filename?: string;
+  generatedAt?: string;
+}
+
+// Extend window interface for our custom property
+declare global {
+  interface Window {
+    __lastGeneratedFile?: GeneratedFileInfo;
+  }
+}
+
 // Single read-only tool for PoC
 export const getSupportedStates = tool({
   description:
@@ -70,7 +85,7 @@ export const generateSyntheticData = tool({
       // Store the file info in a global variable for the download tool
       // In a real implementation, this would be stored in session state
       if (typeof window !== "undefined") {
-        (window as any).__lastGeneratedFile = {
+        window.__lastGeneratedFile = {
           downloadUrl: response.file?.downloadUrl,
           fileId: response.file?.id,
           filename: response.file?.name,
@@ -127,7 +142,10 @@ export const downloadGeneratedData = tool({
   description: "Download the most recently generated synthetic data file",
   execute: async ({ fileId }: { fileId?: string }) => {
     try {
-      let downloadInfo: any;
+      let downloadInfo: GeneratedFileInfo & {
+        downloadUrl: string;
+        filename: string;
+      };
 
       if (fileId) {
         // Use the provided file ID
@@ -136,12 +154,12 @@ export const downloadGeneratedData = tool({
           fileId,
           filename: `synthetic-data-${fileId}.csv`,
         };
-      } else if (
-        typeof window !== "undefined" &&
-        (window as any).__lastGeneratedFile
-      ) {
+      } else if (typeof window !== "undefined" && window.__lastGeneratedFile) {
         // Use the last generated file
-        downloadInfo = (window as any).__lastGeneratedFile;
+        downloadInfo = window.__lastGeneratedFile as GeneratedFileInfo & {
+          downloadUrl: string;
+          filename: string;
+        };
       } else {
         return {
           error: "No file to download",
@@ -225,9 +243,13 @@ export const tools = {
  * NOTE: keys below should match toolsRequiringConfirmation in app.tsx
  */
 export const executions = {
-  downloadGeneratedData: async ({ fileId }: { fileId?: string }) => {
+  downloadGeneratedData: async (args: unknown, _context?: any) => {
+    const { fileId } = args as { fileId?: string };
     try {
-      let downloadInfo: any;
+      let downloadInfo: GeneratedFileInfo & {
+        downloadUrl: string;
+        filename: string;
+      };
 
       if (fileId) {
         // Use the provided file ID
@@ -236,12 +258,12 @@ export const executions = {
           fileId,
           filename: `synthetic-data-${fileId}.csv`,
         };
-      } else if (
-        typeof window !== "undefined" &&
-        (window as any).__lastGeneratedFile
-      ) {
+      } else if (typeof window !== "undefined" && window.__lastGeneratedFile) {
         // Use the last generated file
-        downloadInfo = (window as any).__lastGeneratedFile;
+        downloadInfo = window.__lastGeneratedFile as GeneratedFileInfo & {
+          downloadUrl: string;
+          filename: string;
+        };
       } else {
         return {
           error: "No file to download",
@@ -280,7 +302,8 @@ export const executions = {
       };
     }
   },
-  explainFeature: async ({ feature }: { feature: string }) => {
+  explainFeature: async (args: unknown, _context?: any) => {
+    const { feature } = args as { feature: string };
     const featureExplanations: Record<string, string> = {
       "api access":
         "The API Access feature provides programmatic access to all list generation capabilities, allowing you to integrate synthetic data generation into your automated testing workflows.",
@@ -305,13 +328,11 @@ export const executions = {
     };
   },
 
-  generateSyntheticData: async ({
-    count,
-    states,
-  }: {
-    count: number;
-    states?: string[];
-  }) => {
+  generateSyntheticData: async (args: unknown, _context?: any) => {
+    const { count, states } = args as {
+      count: number;
+      states?: string[];
+    };
     try {
       // Call the Cutty API to generate synthetic data
       const response = await cuttyAPI.generateSyntheticData({ count, states });
@@ -327,7 +348,7 @@ export const executions = {
       // Store the file info in a global variable for the download tool
       // In a real implementation, this would be stored in session state
       if (typeof window !== "undefined") {
-        (window as any).__lastGeneratedFile = {
+        window.__lastGeneratedFile = {
           downloadUrl: response.file?.downloadUrl,
           fileId: response.file?.id,
           filename: response.file?.name,
