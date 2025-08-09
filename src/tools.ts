@@ -21,40 +21,10 @@ export const getSupportedStates = tool({
   parameters: z.object({}),
 });
 
-// Tool with automatic execution
-export const explainFeature = tool({
-  description: "Explain a Cutty app feature in detail",
-  execute: async ({ feature }: { feature: string }) => {
-    const featureExplanations: Record<string, string> = {
-      "api access":
-        "API Access provides programmatic access to all data generation capabilities.",
-      "data export": "Export data in CSV, JSON, or Excel formats.",
-      "list generation":
-        "Generate synthetic data with customizable parameters.",
-      "team collaboration":
-        "Share generated data and collaborate with team members.",
-    };
-
-    const explanation =
-      featureExplanations[feature.toLowerCase()] ||
-      `${feature} helps you work with synthetic data.`;
-
-    return {
-      explanation,
-      feature,
-      relatedFeatures: Object.keys(featureExplanations).filter(
-        (f) => f !== feature.toLowerCase()
-      ),
-    };
-  },
-  parameters: z.object({
-    feature: z.string().describe("The feature to explain"),
-  }),
-});
-
 // Tool for generating synthetic data with automatic execution
 export const generateSyntheticData = tool({
-  description: "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
+  description:
+    "Generate synthetic patient data for testing purposes. Returns a download link that MUST be shared with the user.",
   execute: async ({ count, states }: { count: number; states?: string[] }) => {
     try {
       // Call the Cutty API to generate synthetic data
@@ -96,15 +66,15 @@ export const generateSyntheticData = tool({
 
       // Include download link in the message for the AI to see
       // Need to construct full URL for markdown links to work properly
-      const fullDownloadUrl = response.file?.downloadUrl 
-        ? (response.file.downloadUrl.startsWith('http') 
-            ? response.file.downloadUrl 
-            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
-        : '';
+      const fullDownloadUrl = response.file?.downloadUrl
+        ? response.file.downloadUrl.startsWith("http")
+          ? response.file.downloadUrl
+          : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`
+        : "";
       const downloadLink = fullDownloadUrl
         ? `\n\n[Download Your Data](${fullDownloadUrl})`
-        : '';
-      
+        : "";
+
       return {
         downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
@@ -234,7 +204,6 @@ export const getSyntheticDataStatus = tool({
  */
 export const tools = {
   createDownloadLink,
-  explainFeature,
   generateSyntheticData,
   getSupportedStates,
   getSyntheticDataStatus,
@@ -305,30 +274,6 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
       };
     }
   },
-  explainFeature: async (args: unknown, _context?: any) => {
-    const { feature } = args as { feature: string };
-    const featureExplanations: Record<string, string> = {
-      "api access":
-        "API Access provides programmatic access to all data generation capabilities.",
-      "data export": "Export data in CSV, JSON, or Excel formats.",
-      "list generation":
-        "Generate synthetic data with customizable parameters.",
-      "team collaboration":
-        "Share generated data and collaborate with team members.",
-    };
-
-    const explanation =
-      featureExplanations[feature.toLowerCase()] ||
-      `${feature} helps you work with synthetic data.`;
-
-    return {
-      explanation,
-      feature,
-      relatedFeatures: Object.keys(featureExplanations).filter(
-        (f) => f !== feature.toLowerCase()
-      ),
-    };
-  },
 
   generateSyntheticData: async (args: unknown, _context?: any) => {
     const { count, states } = args as {
@@ -375,15 +320,15 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
 
       // Include download link in the message for the AI to see
       // Need to construct full URL for markdown links to work properly
-      const fullDownloadUrl = response.file?.downloadUrl 
-        ? (response.file.downloadUrl.startsWith('http') 
-            ? response.file.downloadUrl 
-            : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`)
-        : '';
+      const fullDownloadUrl = response.file?.downloadUrl
+        ? response.file.downloadUrl.startsWith("http")
+          ? response.file.downloadUrl
+          : `${cuttyAPI.getBaseURL()}${response.file.downloadUrl}`
+        : "";
       const downloadLink = fullDownloadUrl
         ? `\n\n[Download Your Data](${fullDownloadUrl})`
-        : '';
-      
+        : "";
+
       return {
         downloadLink: fullDownloadUrl, // Add explicit download link field
         file: {
