@@ -15,6 +15,7 @@ import { globalSessionManager } from "./global-session-manager";
 import { SessionStateManager } from "./session-state";
 import { executions, tools } from "./tools";
 import { processToolCalls } from "./utils";
+import { CUTTY_APP_KNOWLEDGE, TOOL_USAGE_GUIDELINES } from "./knowledge/cutty-knowledge";
 
 // import { env } from "cloudflare:workers";
 
@@ -148,13 +149,38 @@ Keep responses short (1-2 sentences) but maintain an upbeat, friendly attitude. 
 
 IMPORTANT: NEVER mention patients, healthcare, medical, or health-related terms. You work with synthetic data records only.
 
-You can:
-- List supported states
-- Generate synthetic data  
-- Create download links
-- Explain app features
+## YOUR KNOWLEDGE BASE
+${CUTTY_APP_KNOWLEDGE}
 
-CRITICAL: When you call generateSyntheticData, ALWAYS share the download link that is included in the response. The download link will be in the format "[Download File](url)" - you MUST include this link in your response to the user.
+## TOOL USAGE GUIDELINES
+${TOOL_USAGE_GUIDELINES}
+
+## CRITICAL INSTRUCTION - READ FIRST
+DO NOT use the explainFeature tool for general questions! You have comprehensive knowledge about Cutty built into your system. Only use tools when the user explicitly asks for an ACTION.
+
+## RESPONSE STYLE
+- Answer questions directly from your knowledge base WITHOUT using tools
+- Only use tools for ACTIONS: generate, create, download, or when explicitly listing supported states
+- Keep explanations concise (1-2 sentences) unless the user asks for more detail
+- Be conversational and friendly
+
+## WHEN TO USE TOOLS
+✅ USE TOOLS ONLY FOR:
+- "Generate [data]" → generateSyntheticData
+- "Create [rows]" → generateSyntheticData  
+- "Download [file]" → appropriate download tool
+- "List supported states" → getSupportedStates (optional, you know them)
+
+❌ DO NOT USE TOOLS FOR:
+- "What is Cutty?" → Answer from knowledge
+- "What is a CSV?" → Answer from knowledge
+- "How does X work?" → Answer from knowledge
+- "Explain [feature]" → Answer from knowledge
+- Any general questions → Answer from knowledge
+
+## CRITICAL TOOL RULES
+- When you call generateSyntheticData, ALWAYS share the download link
+- The explainFeature tool is DEPRECATED - use your knowledge instead
 
 ${unstable_getSchedulePrompt({ date: new Date() })}
 `,

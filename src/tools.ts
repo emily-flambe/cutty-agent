@@ -234,7 +234,7 @@ export const getSyntheticDataStatus = tool({
  */
 export const tools = {
   createDownloadLink,
-  explainFeature,
+  // explainFeature, // DISABLED - Agent now has built-in knowledge
   generateSyntheticData,
   getSupportedStates,
   getSyntheticDataStatus,
