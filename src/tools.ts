@@ -21,37 +21,6 @@ export const getSupportedStates = tool({
   parameters: z.object({}),
 });
 
-// Tool with automatic execution
-export const explainFeature = tool({
-  description: "Explain a Cutty app feature in detail",
-  execute: async ({ feature }: { feature: string }) => {
-    const featureExplanations: Record<string, string> = {
-      "api access":
-        "API Access provides programmatic access to all data generation capabilities.",
-      "data export": "Export data in CSV, JSON, or Excel formats.",
-      "list generation":
-        "Generate synthetic data with customizable parameters.",
-      "team collaboration":
-        "Share generated data and collaborate with team members.",
-    };
-
-    const explanation =
-      featureExplanations[feature.toLowerCase()] ||
-      `${feature} helps you work with synthetic data.`;
-
-    return {
-      explanation,
-      feature,
-      relatedFeatures: Object.keys(featureExplanations).filter(
-        (f) => f !== feature.toLowerCase()
-      ),
-    };
-  },
-  parameters: z.object({
-    feature: z.string().describe("The feature to explain"),
-  }),
-});
-
 // Tool for generating synthetic data with automatic execution
 export const generateSyntheticData = tool({
   description:
@@ -235,7 +204,6 @@ export const getSyntheticDataStatus = tool({
  */
 export const tools = {
   createDownloadLink,
-  // explainFeature, // DISABLED - Agent now has built-in knowledge
   generateSyntheticData,
   getSupportedStates,
   getSyntheticDataStatus,
@@ -305,30 +273,6 @@ The file contains ${downloadInfo.metadata?.recordCount || "your"} synthetic pati
         success: false,
       };
     }
-  },
-  explainFeature: async (args: unknown, _context?: any) => {
-    const { feature } = args as { feature: string };
-    const featureExplanations: Record<string, string> = {
-      "api access":
-        "API Access provides programmatic access to all data generation capabilities.",
-      "data export": "Export data in CSV, JSON, or Excel formats.",
-      "list generation":
-        "Generate synthetic data with customizable parameters.",
-      "team collaboration":
-        "Share generated data and collaborate with team members.",
-    };
-
-    const explanation =
-      featureExplanations[feature.toLowerCase()] ||
-      `${feature} helps you work with synthetic data.`;
-
-    return {
-      explanation,
-      feature,
-      relatedFeatures: Object.keys(featureExplanations).filter(
-        (f) => f !== feature.toLowerCase()
-      ),
-    };
   },
 
   generateSyntheticData: async (args: unknown, _context?: any) => {
