@@ -48,11 +48,21 @@ async function processMessage(req: ChatRequest): Promise<Response> {
 
 ```
 src/
-├── server.ts      # Main worker entry point
-├── tools.ts       # Tool definitions
-├── middleware.ts  # Request/response middleware
-├── types.ts       # Shared type definitions
-└── utils.ts       # Helper functions
+├── server.ts              # Main worker entry point with Chat Durable Object
+├── tools.ts               # Tool definitions and executions
+├── utils.ts               # Helper functions and tool processing
+├── cutty-api.ts           # Cutty API integration
+├── session-state.ts       # Session state management
+├── global-session-manager.ts  # Global session management
+├── shared.ts              # Shared utilities
+├── retry-utils.ts         # Retry logic utilities
+├── app.tsx                # Main React app component
+├── client.tsx             # Client-side entry point
+├── styles.css             # Global styles
+├── components/            # React UI components
+├── hooks/                 # React hooks
+├── lib/                   # Library utilities
+└── providers/             # React context providers
 ```
 
 ## Naming Conventions

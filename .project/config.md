@@ -25,9 +25,10 @@ Cutty Agent is a proof-of-concept AI assistant for the Cutty application, built 
 
 - **Runtime**: Cloudflare Workers with Durable Objects
 - **Framework**: Cloudflare Agents SDK
-- **Language Model**: Anthropic Claude 3.5 Sonnet
+- **Language Model**: Anthropic Claude 3.5 Sonnet (claude-3-5-sonnet-20241022)
 - **Language**: TypeScript
 - **State Management**: Durable Objects for conversation persistence
+- **Frontend Framework**: React with Vite
 
 ## Success Criteria
 

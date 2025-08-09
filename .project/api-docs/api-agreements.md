@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Cutty Agent uses the Cloudflare Agents SDK to provide AI chat capabilities via WebSocket connections. Each chat session is isolated using unique session IDs embedded in the URL path.
+The Cutty Agent uses the Cloudflare Agents SDK to provide AI chat capabilities via WebSocket connections, powered by Anthropic's Claude 3.5 Sonnet model. Each chat session is isolated using unique session IDs embedded in the URL path.
 
 ## Base URL
 
