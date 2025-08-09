@@ -15,7 +15,10 @@ import { globalSessionManager } from "./global-session-manager";
 import { SessionStateManager } from "./session-state";
 import { executions, tools } from "./tools";
 import { processToolCalls } from "./utils";
-import { CUTTY_APP_KNOWLEDGE, TOOL_USAGE_GUIDELINES } from "./knowledge/cutty-knowledge";
+import {
+  CUTTY_APP_KNOWLEDGE,
+  TOOL_USAGE_GUIDELINES,
+} from "./knowledge/cutty-knowledge";
 
 // import { env } from "cloudflare:workers";
 
